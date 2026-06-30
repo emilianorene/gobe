@@ -64,7 +64,7 @@ class SpikeEmulatorActivity : ComponentActivity() {
         }
     }
 
-    /** Finds the first .sfc/.smc under the on-device SNES folder (case-insensitive FS). */
+    /** Recursively finds the first .sfc/.smc under the on-device SNES folder (case-insensitive FS). */
     private fun firstSnesRom(): String? {
         val candidates = listOf(
             "/storage/emulated/0/Download/ROMs/Snes",
@@ -72,8 +72,7 @@ class SpikeEmulatorActivity : ComponentActivity() {
             "/storage/emulated/0/Download/ROMs/SNES",
         )
         for (path in candidates) {
-            val dir = File(path)
-            val rom = dir.listFiles()?.firstOrNull {
+            val rom = File(path).walkTopDown().firstOrNull {
                 it.isFile && (it.name.endsWith(".sfc", true) || it.name.endsWith(".smc", true))
             }
             if (rom != null) return rom.absolutePath

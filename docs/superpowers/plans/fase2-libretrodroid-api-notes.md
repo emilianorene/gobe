@@ -73,8 +73,13 @@ sealed class GLRetroEvents { object FrameRendered; object SurfaceCreated }
 
 ## Core packaging (snes9x)
 
-- ABI `arm64-v8a`. Core from libretro buildbot, renamed `libsnes9x_libretro_android.so`,
-  placed in `app/src/main/jniLibs/arm64-v8a/`.
+- **ABI `armeabi-v7a` (32-bit).** IMPORTANT: the ONN Plus 4K runs **32-bit Android**
+  (`ro.product.cpu.abi = armeabi-v7a`, `abilist = armeabi-v7a,armeabi`) — there is **no
+  arm64** on this device. The spike initially shipped an arm64 core and it failed to load
+  (`nativeLibraryDir` was `.../lib/arm`). Use the **armeabi-v7a** core only.
+- Core from libretro buildbot (`armeabi-v7a/snes9x_libretro_android.so.zip`), renamed
+  `libsnes9x_libretro_android.so`, placed in `app/src/main/jniLibs/armeabi-v7a/`.
+- ROMs are often nested (e.g. `Snes/<Collection>/<game>.sfc`) — find them recursively.
 - `android { packaging { jniLibs { useLegacyPackaging = true } } }` + manifest
   `android:extractNativeLibs="true"` so it lands in `applicationInfo.nativeLibraryDir`.
 - Verify post-install: `adb shell run-as com.gobe.tv ls -la <nativeLibraryDir>` shows the `.so`.
