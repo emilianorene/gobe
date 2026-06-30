@@ -54,13 +54,21 @@ wrinkle: **romset/core-version compatibility** (and BIOS for some games).
 - **Detail screen:** `playable` currently is `system == SNES`; broaden it to "core available
   for this system" (i.e. `CoreManager(...).corePath(system) != null`), so ARCADE shows an
   enabled "Jugar" and SNES is unchanged. Other systems still show "próximamente".
-- **`EmulatorActivity`:** unchanged flow. The arcade `.zip` path is passed as `gameFilePath`;
-  the core loads the romset. `systemDirectory` points at a `system/` dir under `filesDir`
-  (the user copies BIOS zips there). Save states / SRAM / the pause menu work as for SNES.
-- **Error handling:** if `GLRetroView`/the core fails to load the game (bad romset / missing
-  BIOS), surface a clear message (Toast/overlay) and finish the Activity rather than hanging
-  or crashing. (Confirm the failure signal during the spike — likely an error event or no
-  first-frame within a timeout.)
+- **`EmulatorActivity`:** the arcade `.zip` path is passed as `gameFilePath`; the core loads
+  the romset. Save states / SRAM / the pause menu work as for SNES.
+- **`systemDirectory` (BIOS) — user-accessible external path.** Today the code uses
+  `filesDir.absolutePath` (app-private, NOT reachable by the user without adb/root). Since
+  Gobe holds `MANAGE_EXTERNAL_STORAGE`, point `systemDirectory` at a **user-accessible
+  external folder** the user can copy BIOS zips into — default
+  **`/storage/emulated/0/Download/ROMs/system`** (created if missing). The user drops
+  `neogeo.zip` etc. there via FTP/a file manager. (`savesDirectory`/save states stay under
+  `filesDir` — only the BIOS/system dir moves out.) This `systemDirectory` change applies to
+  all systems and is harmless for SNES (no BIOS).
+- **Error handling:** if the core fails to load the game (bad romset / missing BIOS), surface
+  a clear message and finish the Activity rather than hanging/crashing. **Spike deliverable:**
+  pin the concrete failure signal — LibretroDroid exposes errors via its
+  `getGLRetroErrors()` (Rx/Flow) stream; the spike confirms this and the Activity subscribes
+  to show the error + return to the grid.
 
 ## 6. Box art / metadata
 
@@ -78,7 +86,9 @@ wrinkle: **romset/core-version compatibility** (and BIOS for some games).
 ## 8. Testing
 
 - **Spike (on-device, first task):** a real user arcade `.zip` boots and is playable with the
-  candidate core; iterate core/version until it works; pin the choice + romset version.
+  candidate core; iterate core/version until it works; pin the choice + romset version. Also
+  pin the **load-failure signal** (`getGLRetroErrors()`) so the non-crashing error UX has a
+  real hook.
 - **Unit (JVM):** `CoreManager` returns the arcade core path for `ARCADE`.
 - **On-device acceptance:** launch an arcade game from the grid → detail → Jugar; it renders
   with audio; gamepad controls; Select+Start opens the menu; Exit to Gobe returns to the grid;
@@ -96,5 +106,6 @@ wrinkle: **romset/core-version compatibility** (and BIOS for some games).
 ## 10. Defaults (change on request)
 
 - Core: `mame2003_plus` (armeabi-v7a) as the spike's first candidate; switch if the user's
-  romsets don't match. `systemDirectory` = `filesDir/system`. "Jugar" enabled whenever a core
-  exists for the game's system.
+  romsets don't match. `systemDirectory` = `/storage/emulated/0/Download/ROMs/system`
+  (user-accessible; created if missing; documented in RESULTS so the user knows where to drop
+  BIOS zips). "Jugar" enabled whenever a core exists for the game's system.
