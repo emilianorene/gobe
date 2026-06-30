@@ -1,11 +1,13 @@
 package com.gobe.tv.ui.home
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.foundation.lazy.LazyColumn
@@ -15,6 +17,7 @@ import androidx.tv.material3.Button
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.gobe.tv.GobeApp
+import com.gobe.tv.R
 import com.gobe.tv.ui.folders.vmFactory
 
 @Composable
@@ -26,7 +29,12 @@ fun HomeScreen(app: GobeApp, onOpenGame: (Long) -> Unit, onOpenFolders: () -> Un
 
     Column(Modifier.fillMaxSize().padding(40.dp)) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text("Gobe", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.weight(1f))
+            Image(
+                painter = painterResource(R.drawable.gobe_logo),
+                contentDescription = "Gobe",
+                modifier = Modifier.height(56.dp),
+            )
+            Spacer(Modifier.weight(1f))
             Button(onClick = onOpenFolders) { Text("⚙ Ajustes") }
         }
         Spacer(Modifier.height(24.dp))
