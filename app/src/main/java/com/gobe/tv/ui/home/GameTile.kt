@@ -1,8 +1,10 @@
 package com.gobe.tv.ui.home
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -12,11 +14,15 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.Card
 import androidx.tv.material3.CardDefaults
@@ -26,6 +32,7 @@ import androidx.tv.material3.Text
 import coil.compose.AsyncImagePainter
 import coil.compose.SubcomposeAsyncImage
 import coil.compose.SubcomposeAsyncImageContent
+import com.gobe.tv.R
 import com.gobe.tv.data.art.BoxartUrlBuilder
 import com.gobe.tv.domain.Game
 
@@ -67,11 +74,11 @@ fun GameTile(
                     if (painter.state is AsyncImagePainter.State.Success) {
                         SubcomposeAsyncImageContent()
                     } else {
-                        TextTile(game)
+                        DefaultCover(game)
                     }
                 }
             } else {
-                TextTile(game)
+                DefaultCover(game)
             }
 
             val p = game.players
@@ -92,14 +99,39 @@ fun GameTile(
     }
 }
 
+/** Branded placeholder cover for games without box art: the Gobe logo as a faint watermark
+ *  with the game's title and system, so the grid stays visual instead of plain text. */
 @OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
-private fun TextTile(game: Game) {
-    Box(Modifier.fillMaxSize().padding(12.dp)) {
+private fun DefaultCover(game: Game) {
+    Box(
+        Modifier
+            .fillMaxSize()
+            .background(Brush.verticalGradient(listOf(Color(0xFF232A3D), Color(0xFF0E1119)))),
+    ) {
+        Image(
+            painter = painterResource(R.drawable.gobe_logo),
+            contentDescription = null,
+            modifier = Modifier
+                .align(Alignment.Center)
+                .fillMaxWidth(0.62f)
+                .alpha(0.16f),
+        )
+        Text(
+            game.system.displayName,
+            style = MaterialTheme.typography.labelSmall,
+            color = Color.White.copy(alpha = 0.6f),
+            modifier = Modifier.align(Alignment.TopStart).padding(8.dp),
+        )
         Text(
             game.displayName,
             style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.onSurface,
+            color = Color.White,
+            textAlign = TextAlign.Center,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .padding(10.dp),
         )
     }
 }
