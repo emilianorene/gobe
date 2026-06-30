@@ -103,6 +103,9 @@ packaging { jniLibs { useLegacyPackaging = true } }
 ```
 and in `AndroidManifest.xml` `<application ... android:extractNativeLibs="true">` so the core is extracted to `nativeLibraryDir` on install.
 
+**Verify the extraction actually happened** (a merged manifest from the LibretroDroid AAR or a dependency could override `extractNativeLibs`/`useLegacyPackaging`): after install, run
+`adb shell run-as com.gobe.tv ls -la $(adb shell pm path com.gobe.tv >/dev/null; echo)` — more simply, log `applicationInfo.nativeLibraryDir` from the app and `adb shell run-as com.gobe.tv ls -la <that dir>` and confirm `libsnes9x_libretro_android.so` is present on disk. If it is NOT extracted, the core path won't resolve — fix the packaging (force `useLegacyPackaging = true`, check the merged manifest) before proceeding.
+
 - [ ] **Step 4: Minimal spike Activity**
 
 Create `SpikeEmulatorActivity` that builds `GLRetroView` with the core path
@@ -130,9 +133,10 @@ is validated.
 
 Record, from the resolved version: the dependency coordinate/module path chosen (A or B), the
 exact `GLRetroViewData` constructor/fields used, how input is forwarded
-(`sendKeyEvent`/`sendMotionEvent` signatures + port arg), `serializeState`/`unserializeState`
-and SRAM method names, the first-frame/"core ready" signal, and lifecycle hooks. **Later tasks
-reference this file.** Commit:
+(`sendKeyEvent`/`sendMotionEvent` signatures + port arg), `serializeState`/`unserializeState`,
+the **SRAM save/load method names and the `saves/` directory wiring in `GLRetroViewData`**
+(so SRAM persists across quit/relaunch — acceptance item in Task 10), the first-frame/"core
+ready" signal, and lifecycle hooks. **Later tasks reference this file.** Commit:
 ```bash
 git add -A && git commit -m "spike(emu): LibretroDroid + snes9x boots a real SNES ROM on the ONN; pin API notes"
 ```
@@ -298,8 +302,9 @@ fun observeContinuePlaying(limit: Int = 12): Flow<List<Game>> =
     gameDao.observeContinuePlaying(limit).map { list -> list.map { it.toDomain() } }
 ```
 
-- [ ] **Step 3: Instrumented test** — add to `GameDaoTest.kt`: insert two games, `touchLastPlayed` on one, assert `observeContinuePlaying(10)` (first emission) contains only it. Run on device:
+- [ ] **Step 3: Instrumented test** — the DAO/ordering assertions need a real SQLite engine, so they run **instrumented** (not JVM unit): add to `GameDaoTest.kt`: insert two games, `touchLastPlayed` on one, assert `observeContinuePlaying(10)` (first emission) contains only it. Run on device:
 `./gradlew --no-daemon :app:connectedDebugAndroidTest`
+(Only the pure `GameEntity.toDomain()` mapping, if you choose to test it in isolation, is JVM-unit-testable — the queries are instrumented.)
 
 - [ ] **Step 4: Commit** `feat(emu): repo lastPlayed update + continue-playing query`
 
@@ -351,7 +356,7 @@ Host `GLRetroView`, lifecycle, input forwarding. NOT TDD (device). Uses the API 
   - Immersive fullscreen (hide system bars), keep screen on.
   - Forward `dispatchKeyEvent`/`onGenericMotionEvent` to the view's input methods on port 0 — EXCEPT the Back button, which toggles the pause overlay (Task 7).
   - On first-frame/"core ready" signal: call `repository.updateLastPlayed(args.gameId)`; if `args.loadState`, apply the saved state from `SaveStateStore`.
-  - `onPause`: pause the core + auto-save state + persist SRAM. `onDestroy`: release the view.
+  - `onPause`: pause the core + auto-save state + persist SRAM (use the SRAM method + `saves/` dir pinned in Task 1's notes). `onDestroy`: release the view.
   - Get `repository`/`SaveStateStore` from `application as GobeApp` (extend the ServiceLocator if needed; keep DI manual per project convention).
 
 - [ ] **Step 3: Build + install + on-device check** — temporarily launch via the spike or a hardcoded test Intent; confirm a SNES game boots, gamepad works, screen stays on. (Full launch from detail comes in Task 8.)
