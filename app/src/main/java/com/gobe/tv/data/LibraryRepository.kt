@@ -61,6 +61,7 @@ class LibraryRepository(
     }
 
     private fun GameEntity.toDomain() = Game(
-        id, path, system, displayName, fileName, sizeBytes, lastPlayed, dateAdded
+        id, path, system, displayName, fileName, sizeBytes, lastPlayed, dateAdded,
+        players = players, boxartName = boxartName,
     )
 }

@@ -9,4 +9,6 @@ data class Game(
     val sizeBytes: Long,
     val lastPlayed: Long? = null,
     val dateAdded: Long,
+    val players: Int? = null,
+    val boxartName: String? = null,
 )

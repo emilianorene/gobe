@@ -18,7 +18,9 @@ class GobeApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        val db = Room.databaseBuilder(this, GobeDatabase::class.java, "gobe.db").build()
+        val db = Room.databaseBuilder(this, GobeDatabase::class.java, "gobe.db")
+            .addMigrations(GobeDatabase.MIGRATION_1_2)
+            .build()
         val scanner = RomScanner(SystemDetector(), NameCleaner())
         repository = LibraryRepository(db.gameDao(), db.romFolderDao(), scanner)
     }
