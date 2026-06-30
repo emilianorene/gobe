@@ -70,11 +70,11 @@ class LibraryRepository(
             val candidates = gameDao.getAll().filter { it.players == null && it.boxartName == null }
             val updates = candidates.mapNotNull { e ->
                 val meta = m.match(e.displayName, provider(e.system)) ?: return@mapNotNull null
-                Triple(e.id, meta.players, meta.boxart)
+                MetaUpdate(e.id, meta.players, meta.boxart, meta.genre, meta.year)
             }
             if (updates.isNotEmpty()) {
                 runInTransaction {
-                    updates.forEach { (id, players, boxart) -> gameDao.updateMeta(id, players, boxart) }
+                    updates.forEach { u -> gameDao.updateMeta(u.id, u.players, u.boxart, u.genre, u.year) }
                 }
             }
         }
@@ -87,6 +87,14 @@ class LibraryRepository(
 
     private fun GameEntity.toDomain() = Game(
         id, path, system, displayName, fileName, sizeBytes, lastPlayed, dateAdded,
-        players = players, boxartName = boxartName,
+        players = players, boxartName = boxartName, genre = genre, year = year,
+    )
+
+    private data class MetaUpdate(
+        val id: Long,
+        val players: Int?,
+        val boxart: String?,
+        val genre: String?,
+        val year: Int?,
     )
 }

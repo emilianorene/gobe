@@ -32,6 +32,6 @@ interface GameDao {
     @Query("SELECT * FROM games WHERE displayName LIKE '%' || :q || '%' AND (:system IS NULL OR system = :system) ORDER BY displayName COLLATE NOCASE ASC")
     fun searchGames(q: String, system: String?): kotlinx.coroutines.flow.Flow<List<GameEntity>>
 
-    @Query("UPDATE games SET players = :players, boxartName = :boxartName WHERE id = :id")
-    suspend fun updateMeta(id: Long, players: Int?, boxartName: String?)
+    @Query("UPDATE games SET players = :players, boxartName = :boxartName, genre = :genre, year = :year WHERE id = :id")
+    suspend fun updateMeta(id: Long, players: Int?, boxartName: String?, genre: String?, year: Int?)
 }

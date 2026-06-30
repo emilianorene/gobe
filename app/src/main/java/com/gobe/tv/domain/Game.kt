@@ -11,4 +11,6 @@ data class Game(
     val dateAdded: Long,
     val players: Int? = null,
     val boxartName: String? = null,
+    val genre: String? = null,
+    val year: Int? = null,
 )

@@ -107,6 +107,18 @@ fun DetailScreen(app: GobeApp, gameId: Long, onBack: () -> Unit) {
                     )
                     Spacer(Modifier.height(4.dp))
                     Text(
+                        stringResource(R.string.detail_genre) + ": " + (g.genre ?: "—"),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        stringResource(R.string.detail_year) + ": " + (g.year?.toString() ?: "—"),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
                         stringResource(R.string.detail_size_kb, (g.sizeBytes / 1024).toInt()) +
                             if (hasState) " · " + stringResource(R.string.detail_save_state_present) else "",
                         style = MaterialTheme.typography.bodyLarge,

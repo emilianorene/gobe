@@ -16,6 +16,8 @@
     <string name="detail_save_state_present">Save state: sí</string>
     <string name="detail_size_kb">%1$d KB</string>
     <string name="detail_players">Jugadores</string>
+    <string name="detail_genre">Género</string>
+    <string name="detail_year">Año</string>
 
     <string name="folders_title">Carpetas de ROMs</string>
     <string name="folders_add">+ Agregar carpeta</string>

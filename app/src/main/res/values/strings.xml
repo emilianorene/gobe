@@ -20,6 +20,8 @@
     <string name="detail_save_state_present">Save state: yes</string>
     <string name="detail_size_kb">%1$d KB</string>
     <string name="detail_players">Players</string>
+    <string name="detail_genre">Genre</string>
+    <string name="detail_year">Year</string>
 
     <!-- Folders -->
     <string name="folders_title">ROM folders</string>
