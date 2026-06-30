@@ -26,7 +26,7 @@ the heavy, GPL-licensed native core integration.
 - **ROM packaging:** **ROMs are NOT bundled in the APK.** The app scans real folders on
   the device via `java.io.File`. Bundling would bypass the very storage architecture this
   milestone exists to validate, would be inflexible (rebuild to add a game), and conflicts
-  with the project's "never include/distribute ROMs" rule (parent spec §6.7). The ONN
+  with the project's "never include/distribute ROMs" rule (parent spec §6, item 7). The ONN
   already holds the ROMs; the Mac copy is just a backup/source.
 - **ROM path:** confirmed via `adb shell` during implementation, then baked in as the
   default scan path. App also supports adding/removing folders in-app.
@@ -123,6 +123,11 @@ RomFolder(
 `System` enum: `NES, SNES, N64, ARCADE` (extensible). Arcade entries from Fase 1 are
 treated as "unverified" (no romset validation yet).
 
+This `Game` model intentionally extends the parent spec's
+`Game(id, path, system, displayName, lastPlayed)` with `fileName`, `sizeBytes`, and
+`dateAdded`. `fileName`/`sizeBytes` feed the detail stub's "file info"; `dateAdded`
+supports future ordering. The extension is additive and does not conflict with the parent.
+
 ### 6.3 System detection
 
 | Extension(s)        | System            |
@@ -150,7 +155,9 @@ On launch and on manual "Refresh":
 5. UI observes Room via Flow → grid updates reactively.
 
 Errors (unreadable folder, permission revoked mid-session) surface as a non-blocking
-banner; the app never crashes on a bad path.
+banner; the app never crashes on a bad path. The recursive walk follows real device
+storage; to stay safe it does not follow symlinks and bounds recursion depth (e.g. a
+sane max depth) to avoid pathological/cyclic trees.
 
 ## 7. Screens and focus (the real TV work)
 
@@ -172,8 +179,10 @@ explicit initial `focusRequester`; tiles use `Modifier.focusable()`; no focus tr
 3. **Folder management** (Fase-1 settings slice) — lists current ROM folders with
    enable/remove, plus "Add folder" → a **custom D-pad folder browser** that lists
    directories from `/storage/emulated/0` downward (OK to enter a directory, an explicit
-   "Use this folder" action to select). This is the deliberate replacement for the broken
-   SAF picker.
+   "Use this folder" action to select). `/storage/emulated/0` is only the browser's fixed
+   starting point for navigation; it is distinct from the stored scan roots in `RomFolder`
+   (§6.4) and from the adb-confirmed default scan path (§5). This is the deliberate
+   replacement for the broken SAF picker.
 
 4. **Game detail (stub)** — cleaned name, system, file info, and a disabled
    "▶ Jugar (próximamente)". Proves OK-navigation and the back stack without emulation.
