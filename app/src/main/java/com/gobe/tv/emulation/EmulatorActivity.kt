@@ -191,13 +191,37 @@ class EmulatorActivity : ComponentActivity() {
 
     // --- input forwarding (Player 1 = port 0) ---
 
+    private val heldKeys = HashSet<Int>()
+
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-        if (event.keyCode == KeyEvent.KEYCODE_BACK) {
+        val code = event.keyCode
+        // Remote Back: toggle the pause menu.
+        if (code == KeyEvent.KEYCODE_BACK) {
             if (event.action == KeyEvent.ACTION_UP) togglePause()
             return true
         }
+        // Gamepad Home/Mode: toggle.
+        if (code == KeyEvent.KEYCODE_BUTTON_MODE) {
+            if (event.action == KeyEvent.ACTION_UP) togglePause()
+            return true
+        }
+        // Track Select/Start to detect the combo.
+        if (code == KeyEvent.KEYCODE_BUTTON_SELECT || code == KeyEvent.KEYCODE_BUTTON_START) {
+            if (event.action == KeyEvent.ACTION_DOWN) heldKeys.add(code) else heldKeys.remove(code)
+            val combo = heldKeys.contains(KeyEvent.KEYCODE_BUTTON_SELECT) &&
+                heldKeys.contains(KeyEvent.KEYCODE_BUTTON_START)
+            if (combo && !paused) {
+                heldKeys.clear()
+                togglePause()
+                return true // swallow — don't leak Select/Start to the core
+            }
+            // While paused, let the overlay handle nav; otherwise forward to the core as normal input.
+            if (paused) return super.dispatchKeyEvent(event)
+            retroView?.sendKeyEvent(event.action, code, 0)
+            return true
+        }
         if (paused) return super.dispatchKeyEvent(event) // overlay handles D-pad
-        retroView?.sendKeyEvent(event.action, event.keyCode, 0)
+        retroView?.sendKeyEvent(event.action, code, 0)
         return true
     }
 

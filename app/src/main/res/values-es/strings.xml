@@ -35,6 +35,7 @@
     <string name="pause_load">Cargar estado</string>
     <string name="pause_load_none">Cargar estado (sin guardado)</string>
     <string name="pause_exit">Salir al menú</string>
+    <string name="pause_exit_to_gobe">Salir a Gobe</string>
 
     <string name="emu_core_unavailable">Core no disponible para %1$s</string>
     <string name="emu_rom_missing">ROM no encontrada</string>

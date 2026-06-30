@@ -58,6 +58,6 @@ fun PauseOverlay(
             Text(if (hasState) "📂  " + stringResource(R.string.pause_load) else "📂  " + stringResource(R.string.pause_load_none))
         }
 
-        Button(onClick = onExit, modifier = Modifier.width(320.dp)) { Text("✕  " + stringResource(R.string.pause_exit)) }
+        Button(onClick = onExit, modifier = Modifier.width(320.dp)) { Text("🏠  " + stringResource(R.string.pause_exit_to_gobe)) }
     }
 }

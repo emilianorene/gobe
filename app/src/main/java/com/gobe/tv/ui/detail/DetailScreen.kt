@@ -76,6 +76,7 @@ fun DetailScreen(app: GobeApp, gameId: Long, onBack: () -> Unit) {
                     loadState = loadState,
                 ),
             )
+        (context.applicationContext as GobeApp).returnToHomeOnResume = true
         context.startActivity(intent)
     }
 

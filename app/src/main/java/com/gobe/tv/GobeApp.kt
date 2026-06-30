@@ -21,6 +21,10 @@ class GobeApp : Application() {
     // case-insensitive, so this matches Download/roms regardless of casing.
     val defaultRomPath: String = "/storage/emulated/0/Download/ROMs"
 
+    // Set when launching the emulator; consumed by GobeNavHost on the next ON_RESUME to
+    // route back to the library grid (Home) after exiting a game.
+    var returnToHomeOnResume: Boolean = false
+
     val gameMatcher = GameMatcher(NameNormalizer())
 
     private val indexCache = mutableMapOf<System, MetadataIndex>()
