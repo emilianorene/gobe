@@ -67,8 +67,9 @@ later sub-projects, as is multi-player (P1–P4) and button remapping.
 
 ## 6. Core delivery
 
-- **ABI:** confirm via `adb shell getprop ro.product.cpu.abi` (expected `arm64-v8a`).
-- **Source:** `snes9x_libretro_android.so` from the libretro buildbot for that ABI.
+- **ABI:** `armeabi-v7a` (CONFIRMED on the ONN — it runs **32-bit Android**; there is no
+  arm64 on this device). Verified via `adb shell getprop ro.product.cpu.abi`.
+- **Source:** `snes9x_libretro_android.so` from the libretro buildbot **armeabi-v7a** build.
 - **Packaging:** ship the core inside the APK under `jniLibs/<abi>/` renamed to the
   `lib*.so` form required for packaging, with `android:extractNativeLibs=true`, and resolve
   its path at runtime from `applicationInfo.nativeLibraryDir`. (This mirrors Lemuroid's

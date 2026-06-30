@@ -37,7 +37,7 @@ On-device install: `./gradlew --no-daemon installDebug` (or `adb install -r app/
 ```
 app/
 ├─ build.gradle.kts                       (+ LibretroDroid dep OR :libretrodroid module; jniLibs packaging)
-├─ src/main/jniLibs/arm64-v8a/
+├─ src/main/jniLibs/armeabi-v7a/  (ONN is 32-bit — confirmed in the spike; NOT arm64)
 │  └─ libsnes9x_libretro_android.so       (bundled core; git-tracked or via a fetch script)
 ├─ src/main/AndroidManifest.xml           (+ EmulatorActivity; extractNativeLibs=true)
 ├─ src/main/java/com/gobe/tv/
@@ -64,7 +64,7 @@ app/
 
 **Files:**
 - Modify: `app/build.gradle.kts`, `app/src/main/AndroidManifest.xml`
-- Create: `app/src/main/jniLibs/arm64-v8a/libsnes9x_libretro_android.so`
+- Create: `app/src/main/jniLibs/armeabi-v7a/  (ONN is 32-bit — confirmed in the spike; NOT arm64)libsnes9x_libretro_android.so`
 - Create (temporary): `app/src/main/java/com/gobe/tv/emulation/SpikeEmulatorActivity.kt`
 
 - [ ] **Step 1: Confirm device ABI**
@@ -95,7 +95,7 @@ Add `include(":libretrodroid")` to `settings.gradle.kts` (point to the library m
 cd /tmp && curl -L -O https://buildbot.libretro.com/nightly/android/latest/arm64-v8a/snes9x_libretro_android.so.zip
 unzip -o snes9x_libretro_android.so.zip
 mkdir -p "<repo>/app/src/main/jniLibs/arm64-v8a"
-cp snes9x_libretro_android.so "<repo>/app/src/main/jniLibs/arm64-v8a/libsnes9x_libretro_android.so"
+cp snes9x_libretro_android.so "<repo>/app/src/main/jniLibs/armeabi-v7a/  (ONN is 32-bit — confirmed in the spike; NOT arm64)libsnes9x_libretro_android.so"
 ```
 (The `lib` prefix is required for jniLibs packaging.) In `app/build.gradle.kts` `android {}` add:
 ```kotlin
