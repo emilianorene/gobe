@@ -7,6 +7,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.foundation.lazy.LazyColumn
@@ -15,6 +16,7 @@ import androidx.tv.material3.Button
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.gobe.tv.GobeApp
+import com.gobe.tv.R
 
 @Composable
 fun FoldersScreen(app: GobeApp, onBrowse: (String) -> Unit, onBack: () -> Unit) {
@@ -25,19 +27,19 @@ fun FoldersScreen(app: GobeApp, onBrowse: (String) -> Unit, onBack: () -> Unit) 
     LaunchedEffect(Unit) { focus.requestFocus() }
 
     Column(Modifier.fillMaxSize().padding(48.dp)) {
-        Text("Carpetas de ROMs", style = MaterialTheme.typography.headlineMedium)
+        Text(stringResource(R.string.folders_title), style = MaterialTheme.typography.headlineMedium)
         Spacer(Modifier.height(24.dp))
         Button(onClick = { onBrowse(app.defaultRomPath) }, modifier = Modifier.focusRequester(focus)) {
-            Text("+ Agregar carpeta")
+            Text(stringResource(R.string.folders_add))
         }
         Spacer(Modifier.height(16.dp))
         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             items(folders) { f ->
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(f.path, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
-                    Button(onClick = { vm.toggle(f) }) { Text(if (f.enabled) "Activa" else "Inactiva") }
+                    Button(onClick = { vm.toggle(f) }) { Text(if (f.enabled) stringResource(R.string.folders_active) else stringResource(R.string.folders_inactive)) }
                     Spacer(Modifier.width(8.dp))
-                    Button(onClick = { vm.remove(f) }) { Text("Quitar") }
+                    Button(onClick = { vm.remove(f) }) { Text(stringResource(R.string.folders_remove)) }
                 }
             }
         }

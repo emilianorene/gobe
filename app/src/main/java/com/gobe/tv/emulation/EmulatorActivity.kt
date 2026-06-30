@@ -16,6 +16,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
 import com.gobe.tv.GobeApp
+import com.gobe.tv.R
 import com.gobe.tv.emulation.ui.PauseOverlay
 import com.gobe.tv.ui.theme.GobeTheme
 import com.swordfish.libretrodroid.GLRetroView
@@ -54,12 +55,12 @@ class EmulatorActivity : ComponentActivity() {
 
         val corePath = CoreManager(applicationInfo.nativeLibraryDir).corePath(args.system)
         if (corePath == null || !File(corePath).exists()) {
-            Toast.makeText(this, "Core no disponible para ${args.system.displayName}", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, getString(R.string.emu_core_unavailable, args.system.displayName), Toast.LENGTH_LONG).show()
             finish()
             return
         }
         if (!File(args.romPath).exists()) {
-            Toast.makeText(this, "ROM no encontrada", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, getString(R.string.emu_rom_missing), Toast.LENGTH_LONG).show()
             finish()
             return
         }
@@ -142,17 +143,17 @@ class EmulatorActivity : ComponentActivity() {
         runCatching {
             saveStore.writeState(args.gameId, v.serializeState())
             hasState = true
-            toast("Estado guardado")
-        }.onFailure { toast("No se pudo guardar el estado") }
+            toast(getString(R.string.emu_state_saved))
+        }.onFailure { toast(getString(R.string.emu_state_save_failed)) }
     }
 
     private fun loadState() {
         val v = retroView ?: return
         val bytes = saveStore.readState(args.gameId)
-        if (bytes == null) { toast("No hay estado guardado"); return }
+        if (bytes == null) { toast(getString(R.string.emu_no_state)); return }
         runCatching { v.unserializeState(bytes) }
             .onSuccess { resume() }
-            .onFailure { toast("No se pudo cargar el estado") }
+            .onFailure { toast(getString(R.string.emu_state_load_failed)) }
     }
 
     private fun exitToMenu() {

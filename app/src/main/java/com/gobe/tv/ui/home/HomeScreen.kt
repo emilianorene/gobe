@@ -8,6 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.foundation.lazy.LazyColumn
@@ -35,12 +36,12 @@ fun HomeScreen(app: GobeApp, onOpenGame: (Long) -> Unit, onOpenFolders: () -> Un
                 modifier = Modifier.height(56.dp),
             )
             Spacer(Modifier.weight(1f))
-            Button(onClick = onOpenFolders) { Text("⚙ Ajustes") }
+            Button(onClick = onOpenFolders) { Text("⚙ " + stringResource(R.string.home_settings)) }
         }
         Spacer(Modifier.height(24.dp))
 
         when {
-            state.loading -> Text("Escaneando…", style = MaterialTheme.typography.bodyLarge)
+            state.loading -> Text(stringResource(R.string.home_scanning), style = MaterialTheme.typography.bodyLarge)
             state.rows.isEmpty() -> EmptyState(onOpenFolders)
             else -> {
                 val hasContinue = state.continuePlaying.isNotEmpty()
@@ -48,7 +49,7 @@ fun HomeScreen(app: GobeApp, onOpenGame: (Long) -> Unit, onOpenFolders: () -> Un
                     if (hasContinue) {
                         item {
                             Column {
-                                Text("Continuar jugando", style = MaterialTheme.typography.titleLarge)
+                                Text(stringResource(R.string.home_continue_playing), style = MaterialTheme.typography.titleLarge)
                                 Spacer(Modifier.height(8.dp))
                                 LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                                     items(state.continuePlaying) { g ->
@@ -69,7 +70,7 @@ fun HomeScreen(app: GobeApp, onOpenGame: (Long) -> Unit, onOpenFolders: () -> Un
                         Column {
                             Text(system.displayName, style = MaterialTheme.typography.titleLarge)
                             Spacer(Modifier.height(8.dp))
-                            // When the "Continuar jugando" row is present it owns initial focus,
+                            // When the continue-playing row is present it owns initial focus,
                             // so the first system row must not also request it.
                             val isFirstRow = !hasContinue && system == state.rows.first().first
                             LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -95,10 +96,10 @@ private fun EmptyState(onOpenFolders: () -> Unit) {
     val focus = remember { FocusRequester() }
     LaunchedEffect(Unit) { focus.requestFocus() }
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Text("No se encontraron juegos.", style = MaterialTheme.typography.titleMedium)
-        Text("Agrega una carpeta de ROMs para empezar.", style = MaterialTheme.typography.bodyLarge)
+        Text(stringResource(R.string.home_no_games), style = MaterialTheme.typography.titleMedium)
+        Text(stringResource(R.string.home_add_folder_hint), style = MaterialTheme.typography.bodyLarge)
         Button(onClick = onOpenFolders, modifier = Modifier.focusRequester(focus)) {
-            Text("Configurar carpetas")
+            Text(stringResource(R.string.home_configure_folders))
         }
     }
 }
