@@ -8,6 +8,8 @@
     <string name="home_no_games">No games found.</string>
     <string name="home_add_folder_hint">Add a ROM folder to get started.</string>
     <string name="home_configure_folders">Configure folders</string>
+    <string name="search_hint">Search games…</string>
+    <string name="filter_all">All</string>
 
     <!-- Detail -->
     <string name="detail_loading">Loading…</string>

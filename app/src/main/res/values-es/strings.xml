@@ -5,6 +5,8 @@
     <string name="home_no_games">No se encontraron juegos.</string>
     <string name="home_add_folder_hint">Agregá una carpeta de ROMs para empezar.</string>
     <string name="home_configure_folders">Configurar carpetas</string>
+    <string name="search_hint">Buscar juegos…</string>
+    <string name="filter_all">Todos</string>
 
     <string name="detail_loading">Cargando…</string>
     <string name="detail_play">Jugar</string>
