@@ -22,7 +22,7 @@ import com.gobe.tv.R
 import com.gobe.tv.ui.folders.vmFactory
 
 @Composable
-fun HomeScreen(app: GobeApp, onOpenGame: (Long) -> Unit, onOpenFolders: () -> Unit) {
+fun HomeScreen(app: GobeApp, onOpenGame: (Long) -> Unit, onOpenSettings: () -> Unit) {
     val vm: HomeViewModel = viewModel(
         factory = vmFactory { HomeViewModel(app.repository, app.defaultRomPath) }
     )
@@ -36,13 +36,13 @@ fun HomeScreen(app: GobeApp, onOpenGame: (Long) -> Unit, onOpenFolders: () -> Un
                 modifier = Modifier.height(56.dp),
             )
             Spacer(Modifier.weight(1f))
-            Button(onClick = onOpenFolders) { Text("⚙ " + stringResource(R.string.home_settings)) }
+            Button(onClick = onOpenSettings) { Text("⚙ " + stringResource(R.string.home_settings)) }
         }
         Spacer(Modifier.height(24.dp))
 
         when {
             state.loading -> Text(stringResource(R.string.home_scanning), style = MaterialTheme.typography.bodyLarge)
-            state.rows.isEmpty() -> EmptyState(onOpenFolders)
+            state.rows.isEmpty() -> EmptyState(onOpenSettings)
             else -> {
                 val hasContinue = state.continuePlaying.isNotEmpty()
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(24.dp)) {
@@ -92,13 +92,13 @@ fun HomeScreen(app: GobeApp, onOpenGame: (Long) -> Unit, onOpenFolders: () -> Un
 }
 
 @Composable
-private fun EmptyState(onOpenFolders: () -> Unit) {
+private fun EmptyState(onOpenSettings: () -> Unit) {
     val focus = remember { FocusRequester() }
     LaunchedEffect(Unit) { focus.requestFocus() }
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Text(stringResource(R.string.home_no_games), style = MaterialTheme.typography.titleMedium)
         Text(stringResource(R.string.home_add_folder_hint), style = MaterialTheme.typography.bodyLarge)
-        Button(onClick = onOpenFolders, modifier = Modifier.focusRequester(focus)) {
+        Button(onClick = onOpenSettings, modifier = Modifier.focusRequester(focus)) {
             Text(stringResource(R.string.home_configure_folders))
         }
     }

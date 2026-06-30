@@ -11,6 +11,7 @@ import com.gobe.tv.ui.folders.FolderBrowserScreen
 import com.gobe.tv.ui.folders.FoldersScreen
 import com.gobe.tv.ui.home.HomeScreen
 import com.gobe.tv.ui.onboarding.PermissionScreen
+import com.gobe.tv.ui.settings.SettingsScreen
 
 @Composable
 fun GobeNavHost(app: GobeApp) {
@@ -39,7 +40,11 @@ fun GobeNavHost(app: GobeApp) {
         is Route.Home -> HomeScreen(
             app = app,
             onOpenGame = { route = Route.Detail(it) },
+            onOpenSettings = { route = Route.Settings },
+        )
+        is Route.Settings -> SettingsScreen(
             onOpenFolders = { route = Route.Folders },
+            onBack = { route = Route.Home },
         )
         is Route.Folders -> FoldersScreen(
             app = app,
