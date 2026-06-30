@@ -23,7 +23,6 @@ fun HomeScreen(app: GobeApp, onOpenGame: (Long) -> Unit, onOpenFolders: () -> Un
         factory = vmFactory { HomeViewModel(app.repository, app.defaultRomPath) }
     )
     val state by vm.state.collectAsState()
-    val firstTile = remember { FocusRequester() }
 
     Column(Modifier.fillMaxSize().padding(40.dp)) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -36,7 +35,6 @@ fun HomeScreen(app: GobeApp, onOpenGame: (Long) -> Unit, onOpenFolders: () -> Un
             state.loading -> Text("Escaneando…", style = MaterialTheme.typography.bodyLarge)
             state.rows.isEmpty() -> EmptyState(onOpenFolders)
             else -> {
-                LaunchedEffect(state.rows) { runCatching { firstTile.requestFocus() } }
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(24.dp)) {
                     items(state.rows) { row ->
                         val system = row.first
@@ -51,7 +49,7 @@ fun HomeScreen(app: GobeApp, onOpenGame: (Long) -> Unit, onOpenFolders: () -> Un
                                     GameTile(
                                         game = g,
                                         onClick = { onOpenGame(g.id) },
-                                        modifier = if (attachFocus) Modifier.focusRequester(firstTile) else Modifier,
+                                        requestInitialFocus = attachFocus,
                                     )
                                 }
                             }
