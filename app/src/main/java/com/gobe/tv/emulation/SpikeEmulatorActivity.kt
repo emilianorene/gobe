@@ -72,10 +72,15 @@ class SpikeEmulatorActivity : ComponentActivity() {
             "/storage/emulated/0/Download/ROMs/SNES",
         )
         for (path in candidates) {
-            val rom = File(path).walkTopDown().firstOrNull {
+            val sfcs = File(path).walkTopDown().filter {
                 it.isFile && (it.name.endsWith(".sfc", true) || it.name.endsWith(".smc", true))
-            }
-            if (rom != null) return rom.absolutePath
+            }.toList()
+            if (sfcs.isEmpty()) continue
+            // For spike testing, prefer "Final Fight (NA)"; else any "final fight"; else first.
+            val preferred = sfcs.firstOrNull { it.name.contains("final fight (na)", true) }
+                ?: sfcs.firstOrNull { it.name.contains("final fight", true) }
+                ?: sfcs.first()
+            return preferred.absolutePath
         }
         return null
     }
