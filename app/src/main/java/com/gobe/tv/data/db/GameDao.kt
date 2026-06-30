@@ -22,4 +22,10 @@ interface GameDao {
 
     @Query("DELETE FROM games WHERE path IN (:paths)")
     suspend fun deleteByPaths(paths: List<String>)
+
+    @Query("UPDATE games SET lastPlayed = :ts WHERE id = :id")
+    suspend fun touchLastPlayed(id: Long, ts: Long)
+
+    @Query("SELECT * FROM games WHERE lastPlayed IS NOT NULL ORDER BY lastPlayed DESC LIMIT :limit")
+    fun observeContinuePlaying(limit: Int): Flow<List<GameEntity>>
 }

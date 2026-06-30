@@ -35,6 +35,12 @@ class LibraryRepository(
 
     suspend fun getGame(id: Long): Game? = gameDao.getById(id)?.toDomain()
 
+    suspend fun updateLastPlayed(id: Long, now: Long = java.lang.System.currentTimeMillis()) =
+        gameDao.touchLastPlayed(id, now)
+
+    fun observeContinuePlaying(limit: Int = 12): Flow<List<Game>> =
+        gameDao.observeContinuePlaying(limit).map { list -> list.map { it.toDomain() } }
+
     /** Scans enabled folders and reconciles the DB. Returns number of games after scan. */
     suspend fun rescan(): Int {
         val paths = folderDao.getEnabled().map { it.path }
