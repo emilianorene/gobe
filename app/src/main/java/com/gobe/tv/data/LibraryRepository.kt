@@ -4,6 +4,8 @@ import com.gobe.tv.data.db.GameDao
 import com.gobe.tv.data.db.GameEntity
 import com.gobe.tv.data.db.RomFolderDao
 import com.gobe.tv.data.db.RomFolderEntity
+import com.gobe.tv.data.metadata.GameMatcher
+import com.gobe.tv.data.metadata.MetadataIndex
 import com.gobe.tv.data.scan.RomScanner
 import com.gobe.tv.domain.Game
 import com.gobe.tv.domain.RomFolder
@@ -16,6 +18,9 @@ class LibraryRepository(
     private val folderDao: RomFolderDao,
     private val scanner: RomScanner,
     private val now: () -> Long = { java.lang.System.currentTimeMillis() },
+    private val matcher: GameMatcher? = null,
+    private val indexProvider: ((System) -> MetadataIndex)? = null,
+    private val runInTransaction: suspend (suspend () -> Unit) -> Unit = { it() },
 ) {
     fun observeGames(): Flow<List<Game>> = gameDao.observeAll().map { list ->
         list.map { it.toDomain() }
@@ -57,8 +62,28 @@ class LibraryRepository(
                 )
             })
         }
+
+        // Populate players/boxartName for games that don't have it yet.
+        val m = matcher
+        val provider = indexProvider
+        if (m != null && provider != null) {
+            val candidates = gameDao.getAll().filter { it.players == null && it.boxartName == null }
+            val updates = candidates.mapNotNull { e ->
+                val meta = m.match(e.displayName, provider(e.system)) ?: return@mapNotNull null
+                Triple(e.id, meta.players, meta.boxart)
+            }
+            if (updates.isNotEmpty()) {
+                runInTransaction {
+                    updates.forEach { (id, players, boxart) -> gameDao.updateMeta(id, players, boxart) }
+                }
+            }
+        }
+
         return gameDao.getAll().size
     }
+
+    fun searchGames(query: String, system: System?): Flow<List<Game>> =
+        gameDao.searchGames(query, system?.name).map { list -> list.map { it.toDomain() } }
 
     private fun GameEntity.toDomain() = Game(
         id, path, system, displayName, fileName, sizeBytes, lastPlayed, dateAdded,
