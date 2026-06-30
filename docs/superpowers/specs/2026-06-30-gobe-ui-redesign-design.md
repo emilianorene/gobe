@@ -64,13 +64,15 @@ The implementation plan phases it; the spec covers the whole.
   a fixed **Continue-playing** row (when non-empty); a `LazyVerticalGrid` of `GameTile`s.
 - `HomeViewModel`: holds `query: String` and `selectedSystem: System?`; exposes a filtered,
   grouped state. Filtering is done in Room (a `searchGames(query, system)` DAO query using
-  `LIKE`) to scale to 1600 rows, observed as a Flow. "Continue playing" stays a separate
-  query (existing `observeContinuePlaying`).
+  `LIKE '%query%'`) to scale to 1600 rows, observed as a Flow. The leading wildcard means no
+  index is used, but at ~1600 rows that's plenty fast — **do not add FTS** (YAGNI).
+  "Continue playing" stays a separate query (existing `observeContinuePlaying`).
 - **Search input:** a Compose text field that raises the system on-screen keyboard (Android TV
   leanback IME); results filter live as the query changes. D-pad: focus the search field from
   the top; chips and grid below.
 - `GameTile`: `AsyncImage` (Coil) of the box-art URL with a text-tile fallback on error/empty;
-  a player badge overlay (`👥N`) when `players >= 2`; current focus scale/border.
+  a player badge overlay showing the actual count `👥N` when `players >= 2` (render the real N,
+  so a 5-player game shows `👥5` gracefully — no hard cap at 4); current focus scale/border.
 
 ### 5.2 Metadata & box art (`com.gobe.tv.data.metadata`, `data/art`)
 
@@ -97,9 +99,10 @@ The implementation plan phases it; the spec covers the whole.
   (gamepad Home) and KEYCODE_BACK (remote). While the overlay is open, input is not forwarded
   to the core and the core is paused (existing behavior).
 - The overlay (existing `PauseOverlay`) gains/keeps: Resume / Save state / Load state / **Exit
-  to Gobe**. "Exit to Gobe" auto-saves (state + SRAM) and `finish()`es; the library then shows
-  the grid (the detail's Back already returns to the grid; "Exit to Gobe" may navigate the
-  library straight to Home for convenience).
+  to Gobe**. "Exit to Gobe" auto-saves (state + SRAM) and `finish()`es. **Decision:** it returns
+  the library to the **grid (Home)**, not the detail — the launching `MainActivity` resets its
+  nav route to `Home` on resume after an emulator exit, so the player lands on the grid to pick
+  another game.
 - The combo must not also reach the core as input (swallow Select/Start while the combo fires).
 
 ### 5.4 Data model / Room
