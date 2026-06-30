@@ -13,6 +13,7 @@ junit = "4.13.2"
 androidxTestJunit = "1.2.1"
 androidxTestRunner = "1.6.2"
 espresso = "3.6.1"
+libretrodroid = "0.14.0"
 
 [libraries]
 core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -35,6 +36,7 @@ junit = { group = "junit", name = "junit", version.ref = "junit" }
 coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
 androidx-test-junit = { group = "androidx.test.ext", name = "junit", version.ref = "androidxTestJunit" }
 androidx-test-runner = { group = "androidx.test", name = "runner", version.ref = "androidxTestRunner" }
+libretrodroid = { group = "com.github.Swordfish90", name = "LibretroDroid", version.ref = "libretrodroid" }
 room-testing = { group = "androidx.room", name = "room-testing", version.ref = "room" }
 
 [plugins]

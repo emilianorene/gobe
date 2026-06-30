@@ -30,6 +30,9 @@ android {
     }
     kotlinOptions { jvmTarget = "17" }
     buildFeatures { compose = true }
+
+    // Extract the bundled core .so to nativeLibraryDir so LibretroDroid can load it by path.
+    packaging { jniLibs { useLegacyPackaging = true } }
 }
 
 dependencies {
@@ -49,6 +52,7 @@ dependencies {
     implementation(libs.room.ktx)
     ksp(libs.room.compiler)
     implementation(libs.coroutines.android)
+    implementation(libs.libretrodroid)
 
     testImplementation(libs.junit)
     testImplementation(libs.coroutines.test)

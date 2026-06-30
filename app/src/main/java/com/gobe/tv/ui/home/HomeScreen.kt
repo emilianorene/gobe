@@ -43,14 +43,35 @@ fun HomeScreen(app: GobeApp, onOpenGame: (Long) -> Unit, onOpenFolders: () -> Un
             state.loading -> Text("Escaneando…", style = MaterialTheme.typography.bodyLarge)
             state.rows.isEmpty() -> EmptyState(onOpenFolders)
             else -> {
+                val hasContinue = state.continuePlaying.isNotEmpty()
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(24.dp)) {
+                    if (hasContinue) {
+                        item {
+                            Column {
+                                Text("Continuar jugando", style = MaterialTheme.typography.titleLarge)
+                                Spacer(Modifier.height(8.dp))
+                                LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                                    items(state.continuePlaying) { g ->
+                                        val attachFocus = g == state.continuePlaying.first()
+                                        GameTile(
+                                            game = g,
+                                            onClick = { onOpenGame(g.id) },
+                                            requestInitialFocus = attachFocus,
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
                     items(state.rows) { row ->
                         val system = row.first
                         val games = row.second
                         Column {
                             Text(system.displayName, style = MaterialTheme.typography.titleLarge)
                             Spacer(Modifier.height(8.dp))
-                            val isFirstRow = system == state.rows.first().first
+                            // When the "Continuar jugando" row is present it owns initial focus,
+                            // so the first system row must not also request it.
+                            val isFirstRow = !hasContinue && system == state.rows.first().first
                             LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                                 items(games) { g ->
                                     val attachFocus = isFirstRow && g == games.first()
