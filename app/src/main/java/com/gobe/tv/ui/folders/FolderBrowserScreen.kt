@@ -7,6 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.foundation.lazy.LazyColumn
@@ -15,6 +16,7 @@ import androidx.tv.material3.Button
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.gobe.tv.GobeApp
+import com.gobe.tv.R
 import java.io.File
 
 @Composable
@@ -40,10 +42,10 @@ fun FolderBrowserScreen(startPath: String, onPicked: () -> Unit, onBack: () -> U
             Button(
                 onClick = { vm.add(current.absolutePath); onPicked() },
                 modifier = Modifier.focusRequester(focus),
-            ) { Text("Usar esta carpeta") }
+            ) { Text(stringResource(R.string.browser_use_folder)) }
             Spacer(Modifier.width(8.dp))
             current.parentFile?.let { p ->
-                Button(onClick = { current = p }) { Text(".. Subir") }
+                Button(onClick = { current = p }) { Text(stringResource(R.string.browser_up)) }
             }
         }
         Spacer(Modifier.height(16.dp))

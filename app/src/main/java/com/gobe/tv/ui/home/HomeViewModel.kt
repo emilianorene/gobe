@@ -20,7 +20,7 @@ data class HomeState(
 
 class HomeViewModel(private val repo: LibraryRepository, defaultPath: String) : ViewModel() {
     // True while a scan is in flight. Drives the "loading" UI so a fresh launch shows
-    // "Escaneando…" instead of the empty state until the first scan completes.
+    // the scanning indicator instead of the empty state until the first scan completes.
     private val scanning = MutableStateFlow(true)
 
     val state: StateFlow<HomeState> =
