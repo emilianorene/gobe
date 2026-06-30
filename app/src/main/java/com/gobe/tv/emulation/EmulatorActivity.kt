@@ -1,5 +1,6 @@
 package com.gobe.tv.emulation
 
+import android.content.Context
 import android.os.Bundle
 import android.view.KeyEvent
 import android.view.MotionEvent
@@ -17,6 +18,7 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
 import com.gobe.tv.GobeApp
 import com.gobe.tv.R
+import com.gobe.tv.i18n.LocaleManager
 import com.gobe.tv.emulation.ui.PauseOverlay
 import com.gobe.tv.ui.theme.GobeTheme
 import com.swordfish.libretrodroid.GLRetroView
@@ -43,6 +45,10 @@ class EmulatorActivity : ComponentActivity() {
 
     private val savesDir: File get() = File(filesDir, "saves").apply { mkdirs() }
     private val sramFile: File get() = File(savesDir, "${args.gameId}.srm")
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(LocaleManager.wrap(newBase))
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
