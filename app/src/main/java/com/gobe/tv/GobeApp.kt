@@ -12,9 +12,9 @@ class GobeApp : Application() {
     lateinit var repository: LibraryRepository
         private set
 
-    // NOTE: placeholder default ROM path. To be confirmed via adb on the real ONN
-    // (Task 1) and updated before the device-acceptance pass.
-    val defaultRomPath: String = "/storage/emulated/0/Roms"
+    // Default ROM folder on the ONN (confirmed via adb). Internal storage is
+    // case-insensitive, so this matches Download/roms regardless of casing.
+    val defaultRomPath: String = "/storage/emulated/0/Download/ROMs"
 
     override fun onCreate() {
         super.onCreate()
