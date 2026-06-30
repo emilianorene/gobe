@@ -1,25 +1,35 @@
 package com.gobe.tv.ui.home
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.tv.material3.Button
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.gobe.tv.GobeApp
 import com.gobe.tv.R
+import com.gobe.tv.domain.System
 import com.gobe.tv.ui.folders.vmFactory
 
 @Composable
@@ -28,68 +38,91 @@ fun HomeScreen(app: GobeApp, onOpenGame: (Long) -> Unit, onOpenSettings: () -> U
         factory = vmFactory { HomeViewModel(app.repository, app.defaultRomPath) }
     )
     val state by vm.state.collectAsState()
+    val query by vm.query.collectAsState()
+    val selectedSystem by vm.selectedSystem.collectAsState()
     val settingsFocus = remember { FocusRequester() }
 
     Column(Modifier.fillMaxSize().padding(40.dp)) {
+        // Top bar: logo + search field + Settings.
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Image(
                 painter = painterResource(R.drawable.gobe_logo),
                 contentDescription = "Gobe",
                 modifier = Modifier.height(56.dp),
             )
-            Spacer(Modifier.weight(1f))
+            Spacer(Modifier.width(24.dp))
+            SearchField(
+                value = query,
+                onValueChange = vm::setQuery,
+                modifier = Modifier.weight(1f),
+            )
+            Spacer(Modifier.width(24.dp))
             Button(
                 onClick = onOpenSettings,
                 modifier = Modifier.focusRequester(settingsFocus),
             ) { Text("⚙ " + stringResource(R.string.home_settings)) }
         }
+        Spacer(Modifier.height(16.dp))
+
+        // Filter chips: All + one per system.
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            FilterChip(
+                label = stringResource(R.string.filter_all),
+                selected = selectedSystem == null,
+                onClick = { vm.setSystem(null) },
+            )
+            System.entries.forEach { sys ->
+                FilterChip(
+                    label = sys.displayName,
+                    selected = selectedSystem == sys,
+                    onClick = { vm.setSystem(sys) },
+                )
+            }
+        }
         Spacer(Modifier.height(24.dp))
+
+        val hasContinue = state.continuePlaying.isNotEmpty()
 
         when {
             state.loading -> Text(stringResource(R.string.home_scanning), style = MaterialTheme.typography.bodyLarge)
-            state.rows.isEmpty() -> EmptyState(onOpenSettings)
+            state.games.isEmpty() && !hasContinue && query.isEmpty() && selectedSystem == null ->
+                EmptyState(onOpenSettings)
             else -> {
-                val hasContinue = state.continuePlaying.isNotEmpty()
-                LazyColumn(verticalArrangement = Arrangement.spacedBy(24.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
                     if (hasContinue) {
-                        item {
-                            // First row: pressing UP reaches the top-bar Settings button.
-                            Column(Modifier.focusProperties { up = settingsFocus }) {
-                                Text(stringResource(R.string.home_continue_playing), style = MaterialTheme.typography.titleLarge)
-                                Spacer(Modifier.height(8.dp))
-                                LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                                    items(state.continuePlaying) { g ->
-                                        val attachFocus = g == state.continuePlaying.first()
-                                        GameTile(
-                                            game = g,
-                                            onClick = { onOpenGame(g.id) },
-                                            requestInitialFocus = attachFocus,
-                                        )
-                                    }
+                        // First focusable row routes UP to the top-bar Settings button.
+                        Column(Modifier.focusProperties { up = settingsFocus }) {
+                            Text(stringResource(R.string.home_continue_playing), style = MaterialTheme.typography.titleLarge)
+                            Spacer(Modifier.height(8.dp))
+                            LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                                items(state.continuePlaying, key = { it.id }) { g ->
+                                    GameTile(
+                                        game = g,
+                                        onClick = { onOpenGame(g.id) },
+                                        requestInitialFocus = g == state.continuePlaying.first(),
+                                    )
                                 }
                             }
                         }
                     }
-                    items(state.rows) { row ->
-                        val system = row.first
-                        val games = row.second
-                        // When the continue-playing row is present it owns initial focus,
-                        // so the first system row must not also request it.
-                        val isFirstRow = !hasContinue && system == state.rows.first().first
-                        // The first visible row routes UP to the top-bar Settings button.
-                        val rowModifier = if (isFirstRow) Modifier.focusProperties { up = settingsFocus } else Modifier
-                        Column(rowModifier) {
-                            Text(system.displayName, style = MaterialTheme.typography.titleLarge)
-                            Spacer(Modifier.height(8.dp))
-                            LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                                items(games) { g ->
-                                    val attachFocus = isFirstRow && g == games.first()
-                                    GameTile(
-                                        game = g,
-                                        onClick = { onOpenGame(g.id) },
-                                        requestInitialFocus = attachFocus,
-                                    )
-                                }
+
+                    if (state.games.isNotEmpty()) {
+                        // When the continue row owns focus the grid must not also request it,
+                        // and only the topmost focusable content row routes UP to Settings.
+                        val gridModifier =
+                            if (hasContinue) Modifier else Modifier.focusProperties { up = settingsFocus }
+                        LazyVerticalGrid(
+                            columns = GridCells.Adaptive(140.dp),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(16.dp),
+                            modifier = gridModifier.fillMaxSize(),
+                        ) {
+                            items(state.games, key = { it.id }) { g ->
+                                GameTile(
+                                    game = g,
+                                    onClick = { onOpenGame(g.id) },
+                                    requestInitialFocus = !hasContinue && g == state.games.first(),
+                                )
                             }
                         }
                     }
@@ -100,9 +133,48 @@ fun HomeScreen(app: GobeApp, onOpenGame: (Long) -> Unit, onOpenSettings: () -> U
 }
 
 @Composable
+private fun SearchField(value: String, onValueChange: (String) -> Unit, modifier: Modifier = Modifier) {
+    val textColor = MaterialTheme.colorScheme.onSurface
+    Box(
+        modifier
+            .height(48.dp)
+            .clip(RoundedCornerShape(24.dp))
+            .background(MaterialTheme.colorScheme.surface),
+        contentAlignment = Alignment.CenterStart,
+    ) {
+        BasicTextField(
+            value = value,
+            onValueChange = onValueChange,
+            singleLine = true,
+            textStyle = TextStyle(color = textColor, fontSize = 16.sp),
+            cursorBrush = androidx.compose.ui.graphics.SolidColor(textColor),
+            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(imeAction = ImeAction.Search),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+            decorationBox = { inner ->
+                if (value.isEmpty()) {
+                    Text(
+                        stringResource(R.string.search_hint),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = textColor.copy(alpha = 0.5f),
+                    )
+                }
+                inner()
+            },
+        )
+    }
+}
+
+@Composable
+private fun FilterChip(label: String, selected: Boolean, onClick: () -> Unit) {
+    Button(onClick = onClick) {
+        Text(if (selected) "● $label" else label)
+    }
+}
+
+@Composable
 private fun EmptyState(onOpenSettings: () -> Unit) {
     val focus = remember { FocusRequester() }
-    LaunchedEffect(Unit) { focus.requestFocus() }
+    LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Text(stringResource(R.string.home_no_games), style = MaterialTheme.typography.titleMedium)
         Text(stringResource(R.string.home_add_folder_hint), style = MaterialTheme.typography.bodyLarge)

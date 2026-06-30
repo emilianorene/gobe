@@ -5,6 +5,8 @@
     <string name="home_no_games">No se encontraron juegos.</string>
     <string name="home_add_folder_hint">Agregá una carpeta de ROMs para empezar.</string>
     <string name="home_configure_folders">Configurar carpetas</string>
+    <string name="search_hint">Buscar juegos…</string>
+    <string name="filter_all">Todos</string>
 
     <string name="detail_loading">Cargando…</string>
     <string name="detail_play">Jugar</string>
@@ -13,6 +15,9 @@
     <string name="detail_back">Volver</string>
     <string name="detail_save_state_present">Save state: sí</string>
     <string name="detail_size_kb">%1$d KB</string>
+    <string name="detail_players">Jugadores</string>
+    <string name="detail_genre">Género</string>
+    <string name="detail_year">Año</string>
 
     <string name="folders_title">Carpetas de ROMs</string>
     <string name="folders_add">+ Agregar carpeta</string>
@@ -32,6 +37,7 @@
     <string name="pause_load">Cargar estado</string>
     <string name="pause_load_none">Cargar estado (sin guardado)</string>
     <string name="pause_exit">Salir al menú</string>
+    <string name="pause_exit_to_gobe">Salir a Gobe</string>
 
     <string name="emu_core_unavailable">Core no disponible para %1$s</string>
     <string name="emu_rom_missing">ROM no encontrada</string>

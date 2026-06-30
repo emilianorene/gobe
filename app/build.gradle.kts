@@ -53,9 +53,11 @@ dependencies {
     ksp(libs.room.compiler)
     implementation(libs.coroutines.android)
     implementation(libs.libretrodroid)
+    implementation(libs.coil.compose)
 
     testImplementation(libs.junit)
     testImplementation(libs.coroutines.test)
+    testImplementation("org.json:json:20240303")
     androidTestImplementation(libs.androidx.test.junit)
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.room.testing)

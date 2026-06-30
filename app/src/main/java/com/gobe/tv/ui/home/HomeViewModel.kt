@@ -5,32 +5,34 @@ import androidx.lifecycle.viewModelScope
 import com.gobe.tv.data.LibraryRepository
 import com.gobe.tv.domain.Game
 import com.gobe.tv.domain.System
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 data class HomeState(
-    val rows: List<Pair<System, List<Game>>> = emptyList(),
     val continuePlaying: List<Game> = emptyList(),
+    val games: List<Game> = emptyList(),
     val loading: Boolean = true,
 )
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class HomeViewModel(private val repo: LibraryRepository, defaultPath: String) : ViewModel() {
-    // True while a scan is in flight. Drives the "loading" UI so a fresh launch shows
-    // the scanning indicator instead of the empty state until the first scan completes.
     private val scanning = MutableStateFlow(true)
+    private val _query = MutableStateFlow("")
+    val query: StateFlow<String> = _query
+    private val _selectedSystem = MutableStateFlow<System?>(null)
+    val selectedSystem: StateFlow<System?> = _selectedSystem
+
+    fun setQuery(q: String) { _query.value = q }
+    fun setSystem(s: System?) { _selectedSystem.value = s }
+
+    private val filtered: Flow<List<Game>> =
+        combine(_query, _selectedSystem) { q, s -> q to s }
+            .flatMapLatest { (q, s) -> repo.searchGames(q, s) }
 
     val state: StateFlow<HomeState> =
-        combine(repo.observeGames(), repo.observeContinuePlaying(), scanning) { games, continuePlaying, isScanning ->
-            val rows = System.entries
-                .map { sys -> sys to games.filter { it.system == sys } }
-                .filter { it.second.isNotEmpty() }
-            // Only show the loading state when we have nothing to display yet; once games
-            // exist we render rows even if a later rescan is still running.
-            HomeState(rows = rows, continuePlaying = continuePlaying, loading = isScanning && rows.isEmpty())
+        combine(repo.observeContinuePlaying(), filtered, scanning) { cont, games, scan ->
+            HomeState(continuePlaying = cont, games = games, loading = scan && games.isEmpty() && cont.isEmpty())
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), HomeState())
 
     init {

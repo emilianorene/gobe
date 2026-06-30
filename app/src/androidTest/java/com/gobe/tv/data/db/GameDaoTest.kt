@@ -62,4 +62,23 @@ class GameDaoTest {
         ))
         assertEquals(0, dao.observeContinuePlaying(10).first().size)
     }
+
+    @Test fun searchAndUpdateMeta() = runBlocking {
+        dao.insertAll(listOf(
+            GameEntity(path="/r/Super Mario World.sfc", system=System.SNES, displayName="Super Mario World",
+                fileName="x.sfc", sizeBytes=1, dateAdded=1L),
+        ))
+        val g = dao.getAll().first()
+        dao.updateMeta(g.id, players = 2, boxartName = "Super Mario World", genre = "Platform", year = 1991)
+        val hits = dao.searchGames("Mario", System.SNES.name).first()
+        assertEquals(1, hits.size)
+        assertEquals(2, hits[0].players)
+        assertEquals("Super Mario World", hits[0].boxartName)
+        assertEquals("Platform", hits[0].genre)
+        assertEquals(1991, hits[0].year)
+        // filter by other system returns nothing
+        assertEquals(0, dao.searchGames("Mario", System.NES.name).first().size)
+        // null system = all systems
+        assertEquals(1, dao.searchGames("Mario", null).first().size)
+    }
 }

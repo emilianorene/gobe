@@ -23,6 +23,13 @@ fun GobeNavHost(app: GobeApp) {
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
+                if (app.returnToHomeOnResume) {
+                    app.returnToHomeOnResume = false
+                    if (StoragePermission.isGranted()) {
+                        route = Route.Home
+                        return@LifecycleEventObserver
+                    }
+                }
                 val granted = StoragePermission.isGranted()
                 route = when {
                     !granted -> Route.Permission
