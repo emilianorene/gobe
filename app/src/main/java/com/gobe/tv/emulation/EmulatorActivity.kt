@@ -1,0 +1,229 @@
+package com.gobe.tv.emulation
+
+import android.os.Bundle
+import android.view.KeyEvent
+import android.view.MotionEvent
+import android.view.ViewGroup
+import android.widget.FrameLayout
+import android.widget.Toast
+import androidx.activity.ComponentActivity
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.ComposeView
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
+import androidx.lifecycle.lifecycleScope
+import com.gobe.tv.GobeApp
+import com.gobe.tv.emulation.ui.PauseOverlay
+import com.gobe.tv.ui.theme.GobeTheme
+import com.swordfish.libretrodroid.GLRetroView
+import com.swordfish.libretrodroid.GLRetroViewData
+import kotlinx.coroutines.launch
+import java.io.File
+
+/**
+ * Hosts LibretroDroid's GLRetroView (render/audio/input) for one game, with a Compose pause
+ * overlay on top. Back toggles pause; while paused the core is frozen and the overlay handles
+ * D-pad. Save state + SRAM auto-save on exit; "load state" restores the last save.
+ */
+class EmulatorActivity : ComponentActivity() {
+
+    private lateinit var args: EmulatorArgs
+    private lateinit var saveStore: SaveStateStore
+    private var retroView: GLRetroView? = null
+
+    // Compose state driving the overlay.
+    private var paused by mutableStateOf(false)
+    private var hasState by mutableStateOf(false)
+
+    private var coreReadyHandled = false
+
+    private val savesDir: File get() = File(filesDir, "saves").apply { mkdirs() }
+    private val sramFile: File get() = File(savesDir, "${args.gameId}.srm")
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        hideSystemBars()
+
+        args = EmulatorArgs.fromIntent(intent)
+        saveStore = SaveStateStore(filesDir)
+        hasState = saveStore.hasState(args.gameId)
+
+        val corePath = CoreManager(applicationInfo.nativeLibraryDir).corePath(args.system)
+        if (corePath == null || !File(corePath).exists()) {
+            Toast.makeText(this, "Core no disponible para ${args.system.displayName}", Toast.LENGTH_LONG).show()
+            finish()
+            return
+        }
+        if (!File(args.romPath).exists()) {
+            Toast.makeText(this, "ROM no encontrada", Toast.LENGTH_LONG).show()
+            finish()
+            return
+        }
+
+        val data = GLRetroViewData(this).apply {
+            coreFilePath = corePath
+            gameFilePath = args.romPath
+            systemDirectory = filesDir.absolutePath
+            savesDirectory = savesDir.absolutePath
+            saveRAMState = sramFile.takeIf { it.exists() }?.readBytes()
+        }
+
+        val view = GLRetroView(this, data)
+        retroView = view
+        lifecycle.addObserver(view)
+
+        val root = FrameLayout(this)
+        root.addView(
+            view,
+            FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT),
+        )
+        val overlay = ComposeView(this).apply {
+            setContent {
+                GobeTheme {
+                    if (paused) {
+                        PauseOverlay(
+                            hasState = hasState,
+                            onResume = ::resume,
+                            onSave = ::saveState,
+                            onLoad = ::loadState,
+                            onExit = ::exitToMenu,
+                        )
+                    }
+                }
+            }
+        }
+        root.addView(
+            overlay,
+            FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT),
+        )
+        setContentView(root)
+
+        lifecycleScope.launch {
+            view.getGLRetroEvents().collect { event ->
+                if (event is GLRetroView.GLRetroEvents.FrameRendered && !coreReadyHandled) {
+                    coreReadyHandled = true
+                    onCoreReady()
+                }
+            }
+        }
+    }
+
+    private fun onCoreReady() {
+        lifecycleScope.launch {
+            runCatching { (application as GobeApp).repository.updateLastPlayed(args.gameId) }
+        }
+        if (args.loadState) loadState()
+    }
+
+    // --- pause / resume ---
+
+    private fun togglePause() = if (paused) resume() else pause()
+
+    private fun pause() {
+        retroView?.frameSpeed = 0
+        retroView?.audioEnabled = false
+        paused = true
+    }
+
+    private fun resume() {
+        retroView?.frameSpeed = 1
+        retroView?.audioEnabled = true
+        paused = false
+    }
+
+    // --- save / load / exit ---
+
+    private fun saveState() {
+        val v = retroView ?: return
+        runCatching {
+            saveStore.writeState(args.gameId, v.serializeState())
+            hasState = true
+            toast("Estado guardado")
+        }.onFailure { toast("No se pudo guardar el estado") }
+    }
+
+    private fun loadState() {
+        val v = retroView ?: return
+        val bytes = saveStore.readState(args.gameId)
+        if (bytes == null) { toast("No hay estado guardado"); return }
+        runCatching { v.unserializeState(bytes) }
+            .onSuccess { resume() }
+            .onFailure { toast("No se pudo cargar el estado") }
+    }
+
+    private fun exitToMenu() {
+        autoSave()
+        finish()
+    }
+
+    private fun autoSave() {
+        val v = retroView ?: return
+        runCatching {
+            saveStore.writeState(args.gameId, v.serializeState())
+            hasState = true
+        }
+        runCatching {
+            val sram = v.serializeSRAM()
+            if (sram.isNotEmpty()) {
+                val tmp = File(sramFile.path + ".tmp")
+                tmp.writeBytes(sram)
+                if (!tmp.renameTo(sramFile)) { sramFile.writeBytes(sram); tmp.delete() }
+            }
+        }
+    }
+
+    override fun onPause() {
+        // Auto-save before the GL/emulation thread is paused by the lifecycle observer.
+        if (isFinishing.not()) autoSave()
+        super.onPause()
+    }
+
+    // --- input forwarding (Player 1 = port 0) ---
+
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (event.keyCode == KeyEvent.KEYCODE_BACK) {
+            if (event.action == KeyEvent.ACTION_UP) togglePause()
+            return true
+        }
+        if (paused) return super.dispatchKeyEvent(event) // overlay handles D-pad
+        retroView?.sendKeyEvent(event.action, event.keyCode, 0)
+        return true
+    }
+
+    override fun onGenericMotionEvent(event: MotionEvent): Boolean {
+        if (paused) return super.onGenericMotionEvent(event)
+        val v = retroView ?: return super.onGenericMotionEvent(event)
+        v.sendMotionEvent(
+            GLRetroView.MOTION_SOURCE_DPAD,
+            event.getAxisValue(MotionEvent.AXIS_HAT_X),
+            event.getAxisValue(MotionEvent.AXIS_HAT_Y),
+            0,
+        )
+        v.sendMotionEvent(
+            GLRetroView.MOTION_SOURCE_ANALOG_LEFT,
+            event.getAxisValue(MotionEvent.AXIS_X),
+            event.getAxisValue(MotionEvent.AXIS_Y),
+            0,
+        )
+        v.sendMotionEvent(
+            GLRetroView.MOTION_SOURCE_ANALOG_RIGHT,
+            event.getAxisValue(MotionEvent.AXIS_Z),
+            event.getAxisValue(MotionEvent.AXIS_RZ),
+            0,
+        )
+        return true
+    }
+
+    private fun hideSystemBars() {
+        WindowInsetsControllerCompat(window, window.decorView).let { c ->
+            c.hide(WindowInsetsCompat.Type.systemBars())
+            c.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        }
+    }
+
+    private fun toast(msg: String) = Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+}

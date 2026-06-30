@@ -26,16 +26,10 @@
             </intent-filter>
         </activity>
 
-        <!-- SPIKE ONLY: temporary launcher entry to validate emulation. Removed in Task 8. -->
         <activity
-            android:name=".emulation.SpikeEmulatorActivity"
-            android:exported="true"
+            android:name=".emulation.EmulatorActivity"
+            android:exported="false"
             android:screenOrientation="landscape"
-            android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
-            </intent-filter>
-        </activity>
+            android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|uiMode" />
     </application>
 </manifest>
