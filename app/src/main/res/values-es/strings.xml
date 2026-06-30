@@ -1,0 +1,49 @@
+<resources>
+    <string name="home_settings">Ajustes</string>
+    <string name="home_scanning">Escaneando…</string>
+    <string name="home_continue_playing">Continuar jugando</string>
+    <string name="home_no_games">No se encontraron juegos.</string>
+    <string name="home_add_folder_hint">Agregá una carpeta de ROMs para empezar.</string>
+    <string name="home_configure_folders">Configurar carpetas</string>
+
+    <string name="detail_loading">Cargando…</string>
+    <string name="detail_play">Jugar</string>
+    <string name="detail_resume_save">Reanudar desde save</string>
+    <string name="detail_play_soon">Jugar (próximamente)</string>
+    <string name="detail_back">Volver</string>
+    <string name="detail_save_state_present">Save state: sí</string>
+    <string name="detail_size_kb">%1$d KB</string>
+
+    <string name="folders_title">Carpetas de ROMs</string>
+    <string name="folders_add">+ Agregar carpeta</string>
+    <string name="folders_active">Activa</string>
+    <string name="folders_inactive">Inactiva</string>
+    <string name="folders_remove">Quitar</string>
+    <string name="browser_use_folder">Usar esta carpeta</string>
+    <string name="browser_up">.. Subir</string>
+
+    <string name="perm_title">Permiso de almacenamiento</string>
+    <string name="perm_body">Gobe necesita acceso a todos los archivos para encontrar tus ROMs. Tocá el botón, activá \"Permitir acceso a todos los archivos\" y volvé.</string>
+    <string name="perm_grant">Conceder acceso</string>
+
+    <string name="pause_title">Pausa</string>
+    <string name="pause_resume">Reanudar</string>
+    <string name="pause_save">Guardar estado</string>
+    <string name="pause_load">Cargar estado</string>
+    <string name="pause_load_none">Cargar estado (sin guardado)</string>
+    <string name="pause_exit">Salir al menú</string>
+
+    <string name="emu_core_unavailable">Core no disponible para %1$s</string>
+    <string name="emu_rom_missing">ROM no encontrada</string>
+    <string name="emu_state_saved">Estado guardado</string>
+    <string name="emu_state_save_failed">No se pudo guardar el estado</string>
+    <string name="emu_no_state">No hay estado guardado</string>
+    <string name="emu_state_load_failed">No se pudo cargar el estado</string>
+
+    <string name="settings_title">Ajustes</string>
+    <string name="settings_language">Idioma</string>
+    <string name="settings_folders">Carpetas de ROMs</string>
+    <string name="lang_system">Sistema</string>
+    <string name="lang_es">Español</string>
+    <string name="lang_en">English</string>
+</resources>
