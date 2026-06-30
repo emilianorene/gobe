@@ -132,10 +132,18 @@ supports future ordering. The extension is additive and does not conflict with t
 
 | Extension(s)        | System            |
 |---------------------|-------------------|
-| `.nes`              | NES               |
+| `.nes`, `.fds`      | NES (`.fds` = Famicom Disk System) |
 | `.smc`, `.sfc`      | SNES              |
 | `.z64`, `.n64`, `.v64` | N64            |
-| `.zip`              | ARCADE (unverified) |
+| `.zip`              | classified by parent folder (see below), else ARCADE (unverified) |
+
+**`.zip` is ambiguous** — it can be an arcade romset or a packed console game (e.g. SNES
+collections). The detector therefore classifies a `.zip` by its **parent folder name**
+when that folder clearly names a system (`snes`/`super nintendo`/`sfc` → SNES,
+`n64`/`nintendo 64` → N64, `famicom`/`fds`/`nes` → NES, `arcade`/`mame`/`neogeo`/`cps`/
+`fbneo` → ARCADE); otherwise it falls back to ARCADE (unverified). This was added after
+on-device testing showed the real library keeps SNES games as bare `.sfc`, NES as `.fds`,
+and arcade games as `.zip` under an `Arcade/` folder.
 
 Unknown extensions are ignored. Matching is case-insensitive.
 
@@ -222,6 +230,15 @@ design); recorded here as the target loop:
 - **Arcade in Fase 1 is unverified** — listing `.zip` without romset validation may show
   non-game zips; acceptable for this milestone, resolved when the arcade core lands.
 
-## 11. Open defaults (change on request)
+## 11. Resolved defaults (confirmed during implementation)
 
-- minSdk 30; package `com.gobe.tv`; no Hilt; single module; default ROM path TBD via adb.
+- minSdk 30; **compileSdk 35, AGP 8.6.0** (required by `androidx.tv` 1.0.0); package
+  `com.gobe.tv`; no Hilt; single module.
+- **Device:** ONN Plus 4K runs **Android 14 (SDK 34)**, paired over Wi-Fi adb.
+- **Default ROM path:** `/storage/emulated/0/Download/ROMs` (internal storage is
+  case-insensitive, matching the on-device `Download/roms`).
+- **Compose lists:** standard `LazyColumn`/`LazyRow` (the `androidx.tv` TV lazy lists were
+  removed in 1.0.0); focusable `Card`s handle D-pad traversal.
+- **On-device verified (2026-06-30):** permission onboarding, empty state, library grid
+  with NES/SNES/Arcade rows from the real library, cleaned names, initial + D-pad focus,
+  detail stub (disabled play, focused "Volver"), Back behavior. See the RESULTS doc.

@@ -11,6 +11,7 @@ ksp = "2.0.20-1.0.25"
 coroutines = "1.8.1"
 junit = "4.13.2"
 androidxTestJunit = "1.2.1"
+androidxTestRunner = "1.6.2"
 espresso = "3.6.1"
 
 [libraries]
@@ -33,6 +34,7 @@ coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutin
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
 androidx-test-junit = { group = "androidx.test.ext", name = "junit", version.ref = "androidxTestJunit" }
+androidx-test-runner = { group = "androidx.test", name = "runner", version.ref = "androidxTestRunner" }
 room-testing = { group = "androidx.room", name = "room-testing", version.ref = "room" }
 
 [plugins]

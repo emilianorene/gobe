@@ -53,6 +53,7 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.coroutines.test)
     androidTestImplementation(libs.androidx.test.junit)
+    androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.room.testing)
     androidTestImplementation(platform(libs.compose.bom))
 }
