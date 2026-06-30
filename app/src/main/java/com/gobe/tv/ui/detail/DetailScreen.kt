@@ -9,6 +9,9 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.tv.material3.Button
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
@@ -31,7 +34,21 @@ fun DetailScreen(app: GobeApp, gameId: Long, onBack: () -> Unit) {
 
     val g = game
     val playable = g?.system == System.SNES
-    val hasState = remember(g) { g != null && SaveStateStore(context.filesDir).hasState(g.id) }
+    var hasState by remember { mutableStateOf(false) }
+
+    // Refresh "save state exists" on load AND whenever we return from the emulator (ON_RESUME),
+    // so "Reanudar desde save" appears right after saving/playing without leaving the screen.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    LaunchedEffect(g) { if (g != null) hasState = SaveStateStore(context.filesDir).hasState(g.id) }
+    DisposableEffect(lifecycleOwner, g) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME && g != null) {
+                hasState = SaveStateStore(context.filesDir).hasState(g.id)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
 
     LaunchedEffect(g, playable) {
         if (g != null) runCatching { (if (playable) playFocus else backFocus).requestFocus() }
