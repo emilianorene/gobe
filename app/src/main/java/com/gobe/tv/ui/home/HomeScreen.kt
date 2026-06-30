@@ -6,6 +6,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -27,6 +28,7 @@ fun HomeScreen(app: GobeApp, onOpenGame: (Long) -> Unit, onOpenSettings: () -> U
         factory = vmFactory { HomeViewModel(app.repository, app.defaultRomPath) }
     )
     val state by vm.state.collectAsState()
+    val settingsFocus = remember { FocusRequester() }
 
     Column(Modifier.fillMaxSize().padding(40.dp)) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -36,7 +38,10 @@ fun HomeScreen(app: GobeApp, onOpenGame: (Long) -> Unit, onOpenSettings: () -> U
                 modifier = Modifier.height(56.dp),
             )
             Spacer(Modifier.weight(1f))
-            Button(onClick = onOpenSettings) { Text("⚙ " + stringResource(R.string.home_settings)) }
+            Button(
+                onClick = onOpenSettings,
+                modifier = Modifier.focusRequester(settingsFocus),
+            ) { Text("⚙ " + stringResource(R.string.home_settings)) }
         }
         Spacer(Modifier.height(24.dp))
 
@@ -48,7 +53,8 @@ fun HomeScreen(app: GobeApp, onOpenGame: (Long) -> Unit, onOpenSettings: () -> U
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(24.dp)) {
                     if (hasContinue) {
                         item {
-                            Column {
+                            // First row: pressing UP reaches the top-bar Settings button.
+                            Column(Modifier.focusProperties { up = settingsFocus }) {
                                 Text(stringResource(R.string.home_continue_playing), style = MaterialTheme.typography.titleLarge)
                                 Spacer(Modifier.height(8.dp))
                                 LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -67,12 +73,14 @@ fun HomeScreen(app: GobeApp, onOpenGame: (Long) -> Unit, onOpenSettings: () -> U
                     items(state.rows) { row ->
                         val system = row.first
                         val games = row.second
-                        Column {
+                        // When the continue-playing row is present it owns initial focus,
+                        // so the first system row must not also request it.
+                        val isFirstRow = !hasContinue && system == state.rows.first().first
+                        // The first visible row routes UP to the top-bar Settings button.
+                        val rowModifier = if (isFirstRow) Modifier.focusProperties { up = settingsFocus } else Modifier
+                        Column(rowModifier) {
                             Text(system.displayName, style = MaterialTheme.typography.titleLarge)
                             Spacer(Modifier.height(8.dp))
-                            // When the continue-playing row is present it owns initial focus,
-                            // so the first system row must not also request it.
-                            val isFirstRow = !hasContinue && system == state.rows.first().first
                             LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                                 items(games) { g ->
                                     val attachFocus = isFirstRow && g == games.first()
