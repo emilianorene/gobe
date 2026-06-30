@@ -160,7 +160,8 @@ private fun CoverArt(game: Game) {
             SubcomposeAsyncImage(
                 model = url,
                 contentDescription = game.displayName,
-                contentScale = ContentScale.Crop,
+                // Fit (not Crop) so the whole cover is shown without cutting.
+                contentScale = ContentScale.Fit,
                 modifier = Modifier.fillMaxSize(),
             ) {
                 if (painter.state is AsyncImagePainter.State.Success) {
