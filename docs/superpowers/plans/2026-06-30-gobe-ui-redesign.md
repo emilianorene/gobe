@@ -242,6 +242,9 @@ Run all three → pass. **Commit** `feat(meta): name normalizer + metadata index
 **Files:** Modify `data/db/GameEntity.kt`, `GameDao.kt`, `GobeDatabase.kt`; add to instrumented `GameDaoTest`.
 
 - [ ] **Step 1:** Add to `GameEntity`: `val players: Int? = null`, `val boxartName: String? = null`.
+  **Also** add the same two fields to `domain/Game.kt` and map them in
+  `LibraryRepository.toDomain()` (otherwise Tasks 5–7 reading `game.players`/`game.boxartName`
+  off the domain `Game` won't compile).
 - [ ] **Step 2:** `GameDao` add:
 ```kotlin
 @Query("SELECT * FROM games WHERE displayName LIKE '%' || :q || '%' AND (:system IS NULL OR system = :system) ORDER BY displayName COLLATE NOCASE ASC")
@@ -268,7 +271,12 @@ and register it where the DB is built (in `GobeApp`: `Room.databaseBuilder(...).
 **Files:** Modify `data/LibraryRepository.kt`, `GobeApp.kt`.
 
 - [ ] **Step 1:** `GobeApp` builds a `GameMatcher` + per-system `MetadataIndex` (loaded from assets lazily; if an asset is missing, treat as empty). Inject into the repository (constructor or setter).
-- [ ] **Step 2:** In `rescan()`, after inserting new games, for each game without metadata, `matcher.match(displayName, indexFor(system))` and `gameDao.updateMeta(id, meta?.players, meta?.boxart)`. Keep it incremental (only games with null metadata).
+- [ ] **Step 2:** In `rescan()`, after inserting new games, for each game without metadata,
+  `matcher.match(displayName, indexFor(system))` and `gameDao.updateMeta(id, meta?.players, meta?.boxart)`.
+  Keep it incremental (only games with null metadata). **Wrap the batch in a single Room
+  transaction** (`@Transaction suspend fun updateMetaBatch(...)` or `db.withTransaction { ... }`)
+  — on the first post-migration rescan all ~1600 rows are null, so 1600 separate writes would
+  be slow; one transaction makes it fast.
 - [ ] **Step 3:** Add `fun searchGames(query: String, system: System?): Flow<List<Game>>` mapping `gameDao.searchGames(query, system?.name)`.
 - [ ] **Step 4:** Build (`assembleDebug`) + unit tests green. **Commit** `feat(repo): populate players/boxart on rescan + searchGames`.
 
@@ -308,7 +316,12 @@ and register it where the DB is built (in `GobeApp`: `Room.databaseBuilder(...).
 
 - [ ] **Step 1:** In `EmulatorActivity.dispatchKeyEvent`, track held buttons: when both `KEYCODE_BUTTON_SELECT` and `KEYCODE_BUTTON_START` are down (or `KEYCODE_BUTTON_MODE`, or remote `KEYCODE_BACK`), open the pause overlay (toggle), and **swallow** those events (don't forward Select/Start to the core while the combo is active). Keep forwarding all other inputs when not paused.
 - [ ] **Step 2:** PauseOverlay: keep Resume/Save/Load; rename/relabel the exit to **"Exit to Gobe" / "Salir a Gobe"** (`pause_exit_to_gobe`).
-- [ ] **Step 3:** "Exit to Gobe" auto-saves (state+SRAM) and `finish()`es. To land on the **grid**: the library `MainActivity` should reset its nav route to `Home` on resume after returning from the emulator (e.g., the NavHost re-checks on ON_RESUME, or set a flag). Implement so exiting a game shows the grid, not the detail.
+- [ ] **Step 3:** "Exit to Gobe" auto-saves (state+SRAM) and `finish()`es. To land on the **grid**:
+  use an **emulator-launch flag** — set a flag (e.g. in `GobeApp` or a shared holder) when the
+  detail launches `EmulatorActivity`; in `GobeNavHost`'s ON_RESUME observer, if that flag is set,
+  consume it and force `route = Route.Home`. **Do NOT** blanket-reset to Home on every ON_RESUME
+  — that would bounce Detail/Settings/Folders to Home on any backgrounding. Only the
+  emulator-return path forces Home.
 - [ ] **Step 4:** Build + install + on-device with the gamepad: from a running SNES game, **Select+Start opens the menu**; "Exit to Gobe" returns to the grid to pick another game. **Commit** `feat(emu): Select+Start in-game menu + Exit to Gobe (returns to grid)`.
 
 ---
