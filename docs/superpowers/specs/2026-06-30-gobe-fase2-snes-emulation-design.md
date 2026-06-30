@@ -59,7 +59,11 @@ later sub-projects, as is multi-player (P1–P4) and button remapping.
   native code with the Android **NDK + CMake** (installed via `sdkmanager`).
 - **Spike first:** the implementation plan begins with an integration spike that proves
   `GLRetroView` loads `snes9x` and boots one SNES ROM on the ONN, choosing A or B based on
-  the result, *before* building the surrounding UI. This de-risks the largest unknown.
+  the result, *before* building the surrounding UI. This de-risks the largest unknown. The
+  spike must boot the ROM **from its real on-device path** (e.g. `/storage/emulated/0/
+  Download/ROMs/Snes/<game>.sfc`), not a bundled test asset, to confirm the native core can
+  open a raw `MANAGE_EXTERNAL_STORAGE` path via libc file I/O — this is the one place the
+  ROM-access model could surprise us.
 
 ## 6. Core delivery
 
@@ -98,7 +102,9 @@ com.gobe.tv
    (core path, ROM path, `system/` + `saves/` dirs under `filesDir`), and adds the
    `GLRetroView`.
 3. On first frame, the repository updates `lastPlayed`. If `loadState`, the saved state is
-   applied after the core is ready.
+   applied **on the concrete LibretroDroid "core ready"/first-frame signal** (e.g. the
+   `GLRetroView` state event), not on a timer — applying it before the core is ready would
+   be racy and silently fail.
 
 ### 7.3 Input (P1)
 
@@ -112,7 +118,10 @@ com.gobe.tv
 ### 7.4 Pause + save states
 
 - Opening the overlay pauses emulation (`GLRetroView` paused / audio muted).
-- **Guardar estado:** `serializeState()` → `filesDir/states/<gameId>.state` (atomic write).
+- **Guardar estado:** `serializeState()` → `filesDir/states/<gameId>.state` via
+  **temp-file-then-rename** (write `<gameId>.state.tmp`, then atomic `rename`), so an
+  auto-save fired during a tight `onPause`/`onDestroy` window can never leave a truncated
+  state file.
 - **Cargar estado:** read that file → `unserializeState(bytes)`.
 - **Salir:** auto-save state, persist SRAM, finish the Activity → back to detail/Home.
 - **Resume from save:** the detail screen offers it when `states/<gameId>.state` exists.
