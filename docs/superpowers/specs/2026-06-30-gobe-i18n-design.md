@@ -57,7 +57,7 @@ com.gobe.tv.i18n
    - getLanguage(context): AppLanguage          (read pref, default SYSTEM)
    - setLanguage(context, AppLanguage)          (write pref)
    - resolveLocale(lang): Locale?               (SYSTEM -> null = use system; ES -> Locale("es"); EN -> Locale("en"))  [pure, unit-tested]
-   - wrap(context): Context                      (apply resolved locale to a Configuration-wrapped context; SYSTEM = unchanged)
+   - wrap(context): Context                      (for SYSTEM, return the ORIGINAL context unchanged so the true device locale is preserved; otherwise createConfigurationContext with the resolved Locale)
 ```
 
 `resolveLocale` (the tag↔Locale mapping) is pure and unit-tested. `wrap` does the Android
@@ -79,6 +79,10 @@ com.gobe.tv.i18n
 ### 5.3 Settings UI
 
 - New `ui/settings/SettingsScreen.kt`. Home's "⚙ Settings" navigates here (new `Route.Settings`).
+  **Note:** today the Home settings button (`HomeScreen.kt`) is wired straight to
+  `onOpenFolders` → `Route.Folders`; this work **re-points** it to `Route.Settings`, and
+  Settings then offers a "ROM folders" row that navigates to `Route.Folders`. The existing
+  `onOpenFolders`/Folders wiring in `GobeNavHost` is repurposed, not just added to.
 - Rows (D-pad navigable, first focused, BackHandler → Home):
   - **Language / Idioma:** three selectable chips/buttons (System / Español / English);
     selecting persists + recreates the activity.
@@ -124,6 +128,9 @@ com.gobe.tv.i18n
 - **On-device:** Settings → switch to English: all screens (Home, detail, folders, browser,
   permission, pause overlay, toasts) render in English; switch to Español: all in Spanish;
   set to System: follows the ONN language; the choice persists across app restart.
+  Note: to meaningfully verify the **System** option, the tester must actually change the
+  ONN's system language (otherwise System looks identical to whichever matches the device
+  default) — confirm System tracks the device by toggling the device language once.
 
 ## 8. Risks / notes
 
