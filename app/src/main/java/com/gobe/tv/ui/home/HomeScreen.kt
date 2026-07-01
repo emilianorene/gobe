@@ -47,6 +47,8 @@ fun HomeScreen(app: GobeApp, onOpenGame: (Long) -> Unit, onOpenSettings: () -> U
     val state by vm.state.collectAsState()
     val query by vm.query.collectAsState()
     val selectedSystem by vm.selectedSystem.collectAsState()
+    val selectedGenre by vm.selectedGenre.collectAsState()
+    val genres by vm.genres.collectAsState()
     val settingsFocus = remember { FocusRequester() }
     val searchFocus = remember { FocusRequester() }
     val keyboard = LocalSoftwareKeyboardController.current
@@ -101,6 +103,28 @@ fun HomeScreen(app: GobeApp, onOpenGame: (Long) -> Unit, onOpenSettings: () -> U
                     selected = selectedSystem == sys,
                     onClick = { vm.setSystem(sys) },
                 )
+            }
+        }
+
+        // Genre chips: a scrollable second row (genres are unbounded, unlike the fixed system enum).
+        if (genres.isNotEmpty()) {
+            Spacer(Modifier.height(12.dp))
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                item {
+                    FilterChip(
+                        label = stringResource(R.string.filter_all),
+                        selected = selectedGenre == null,
+                        onClick = { vm.setGenre(null) },
+                    )
+                }
+                items(genres, key = { it }) { genre ->
+                    FilterChip(
+                        label = genre,
+                        selected = selectedGenre == genre,
+                        // Re-tapping the selected genre clears back to All.
+                        onClick = { vm.setGenre(if (selectedGenre == genre) null else genre) },
+                    )
+                }
             }
         }
         Spacer(Modifier.height(24.dp))

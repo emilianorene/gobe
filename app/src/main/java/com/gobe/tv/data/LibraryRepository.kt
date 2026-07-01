@@ -82,8 +82,10 @@ class LibraryRepository(
         return gameDao.getAll().size
     }
 
-    fun searchGames(query: String, system: System?): Flow<List<Game>> =
-        gameDao.searchGames(query, system?.name).map { list -> list.map { it.toDomain() } }
+    fun genres(): Flow<List<String>> = gameDao.distinctGenres()
+
+    fun searchGames(query: String, system: System?, genre: String? = null): Flow<List<Game>> =
+        gameDao.searchGames(query, system?.name, genre).map { list -> list.map { it.toDomain() } }
 
     private fun GameEntity.toDomain() = Game(
         id, path, system, displayName, fileName, sizeBytes, lastPlayed, dateAdded,
