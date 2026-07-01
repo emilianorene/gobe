@@ -18,10 +18,10 @@ import com.gobe.tv.R
 
 /** Brief, non-intrusive pill shown at the bottom when a game starts, teaching how to open the menu. */
 @Composable
-fun ControlsHint() {
+fun ControlsHint(comboLabel: String) {
     Box(Modifier.fillMaxSize().padding(bottom = 40.dp), contentAlignment = Alignment.BottomCenter) {
         Text(
-            stringResource(R.string.controls_hint_menu),
+            stringResource(R.string.controls_hint_menu_fmt, comboLabel),
             style = MaterialTheme.typography.labelLarge,
             color = Color.White,
             modifier = Modifier

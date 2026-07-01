@@ -94,6 +94,11 @@ class ControllersActivity : ComponentActivity() {
                                     ControllerPrefs.save(this@ControllersActivity, assignments)
                                     refreshDevices()
                                 },
+                                onUnassign = {
+                                    assignments = assignments.clear(sel)
+                                    ControllerPrefs.save(this@ControllersActivity, assignments)
+                                    refreshDevices()
+                                },
                                 onToggleSwapAB = {
                                     val next = (swaps[sel] ?: ButtonSwaps()).let { it.copy(swapAB = !it.swapAB) }
                                     ControllerPrefs.saveSwaps(this@ControllersActivity, sel, next)
