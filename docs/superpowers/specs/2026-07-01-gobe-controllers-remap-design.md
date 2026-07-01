@@ -58,11 +58,17 @@ quick A/B and X/Y swap presets.
   }
   fun applyMapping(code: Int, remap: ButtonRemap, swaps: ButtonSwaps): Int =
       remap.byPhysical[code] ?: remapCode(code, swaps)
-  fun serializeRemap(r: ButtonRemap): String            // "phys:target,phys:target"
-  fun parseRemap(s: String?): ButtonRemap
+  fun serializeRemap(r: ButtonRemap): String            // "phys:target,phys:target" (decimal ints)
+  fun parseRemap(s: String?): ButtonRemap               // null/empty -> empty; skip malformed
   ```
   `bind` enforces one physical per target (so the UI row shows a single binding) by removing any
   existing physical that maps to the same target before adding the new one.
+  - **Unbound physicals keep their default.** Binding physical X→A does NOT change physical A: with
+    no entry for A, `applyMapping` falls through to `remapCode`/passthrough, so pressing A still does
+    A. Result: both X and A can act as A (documented, like the conflict case) — the user rebinds A to
+    something else if they want it moved.
+  - **`parseRemap`** returns an empty map for null/empty input, ignores malformed entries (not
+    `int:int`), and keeps the last value on duplicate physical keys. Keycodes serialize as decimal.
 - **Targets:** a fixed list of the 10 target keycodes (`KEYCODE_BUTTON_A/B/X/Y/L1/R1/L2/R2/SELECT/START`),
   with display labels reusing `PadButton` names.
 - **Persistence (`ControllerPrefs`):** `ctrl.remap.<descriptor>` string; load all into
@@ -72,11 +78,23 @@ quick A/B and X/Y swap presets.
   A "Reset" Button → `onResetRemap`. When capturing, a banner "Press a button on the controller…".
   The row's physical label comes from `remap.physicalFor(targetKeycode)` mapped to a readable name
   (via `keyCodeToPadButton` when possible, else the raw keycode).
-- **`ControllersActivity`:** `remaps: Map<String, ButtonRemap>` (loaded with assignments/swaps),
-  `capturingTarget: Int?` (target keycode). In `dispatchKeyEvent`, when `capturingTarget != null`
-  and the event is a DOWN from the selected device: `remaps[sel] = remaps[sel].bind(event.keyCode,
-  capturingTarget)`, save, `capturingTarget = null`, consume. Otherwise the existing test-panel /
-  Back logic. `onResetRemap` clears + saves.
+- **`ControllersActivity` capture state machine (authoritative):** `remaps: Map<String, ButtonRemap>`
+  (loaded with assignments/swaps), `capturingTarget: Int?` (the target keycode being bound; null =
+  not capturing). In `dispatchKeyEvent`, capture takes priority and follows these exact rules:
+  1. **Back while capturing:** if `capturingTarget != null` and the event is `KEYCODE_BACK`
+     (ACTION_UP), **cancel**: set `capturingTarget = null` and consume (return true). It must NOT
+     fall through to the normal Back-leaves-detail/finish behavior and must NOT bind anything.
+  2. **Eligible physical press while capturing:** if `capturingTarget != null`, the event is a DOWN
+     from the selected device, and `keyCodeToPadButton(event.keyCode)` yields a **non-D-pad** button
+     (i.e. a face/shoulder/Select/Start button — the eligible capture set), then bind:
+     `remaps[sel] = remaps[sel].bind(event.keyCode, capturingTarget!!)`, save via `ControllerPrefs`,
+     set `capturingTarget = null`, consume.
+  3. **Ineligible press while capturing:** any other key while capturing (D-pad, unknown/unmapped
+     codes) is **ignored for binding** — it does not bind and does not exit capture (D-pad may still
+     move focus / the banner stays until an eligible button or Back). This prevents binding the
+     D-pad or stray codes.
+  4. **Not capturing:** the existing test-panel / Back / list logic (unchanged).
+  `onResetRemap` clears the selected controller's map + saves.
 - **`EmulatorActivity`:** add `remapsByDescriptor` loaded in `onCreate`; a helper
   `remapForInput(deviceId): ButtonRemap`; change the forward to
   `applyMapping(code, remapForInput(event.deviceId), swapsForInput(event.deviceId))`.
@@ -84,19 +102,22 @@ quick A/B and X/Y swap presets.
 ## 6. Testing
 
 - **Unit (JVM):** `bind` sets and enforces one-physical-per-target; `applyMapping` gives the custom
-  binding precedence over the swap and passes unmapped codes through; `serializeRemap`/`parseRemap`
-  round-trip; `reset` clears.
+  binding precedence over the swap and passes unmapped codes through; an unbound physical keeps its
+  default even when another physical maps to the same target; `serializeRemap`/`parseRemap`
+  round-trip including the **empty map** (→ `""` → empty) and **malformed/null** input (→ empty);
+  `reset` clears.
 - **On-device (controller awake):** in the detail, tap "A" under Remap → "press a button" → press
   physical X → the A row shows it's bound to X; launch a game and confirm pressing physical X now
-  acts as A; Reset clears; the swap presets still work for unbound keys; the Select+Start menu still
-  opens.
+  acts as A; **Cancel path:** tap "A" → press **Back** → capture exits and A keeps its prior binding
+  (nothing bound); Reset clears; the swap presets still work for unbound keys; the Select+Start menu
+  still opens.
 
 ## 7. Risks
 
-1. **Capture vs. navigation:** while capturing, D-pad presses would also be captured — mitigate by
-   only capturing gamepad *face/shoulder/Select/Start* codes (ignore D-pad during capture so the
-   user can still cancel/navigate), or provide a Back-to-cancel. Keep capture simple: capture the
-   first mapped face/shoulder/Select/Start code; Back cancels capture.
+1. **Capture vs. navigation (resolved in §5):** capture binds ONLY an eligible physical press (a
+   `keyCodeToPadButton` non-D-pad button); D-pad and unknown codes are ignored during capture (they
+   don't bind and don't exit); **Back cancels** capture (clears `capturingTarget`, consumes, does not
+   leave the screen or bind). This is the single authoritative rule — see §5.
 2. **Composition confusion** with swaps — mitigated by the clear precedence rule (custom wins,
    else swap) and documented.
 3. **Descriptor caveats** (as before) — no remap = passthrough, input always works.
