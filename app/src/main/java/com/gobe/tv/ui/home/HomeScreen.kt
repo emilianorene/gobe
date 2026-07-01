@@ -17,7 +17,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
@@ -151,8 +150,9 @@ fun HomeScreen(app: GobeApp, onOpenGame: (Long) -> Unit, onOpenSettings: () -> U
                 ) {
                     if (hasContinue) {
                         item(span = { GridItemSpan(maxLineSpan) }) {
-                            // Topmost focusable content row routes UP to the top-bar Settings button.
-                            Column(Modifier.focusProperties { up = settingsFocus }) {
+                            // UP from the content follows natural traversal up through the genre/
+                            // system chip rows to the top bar (Settings is also reachable via R1).
+                            Column {
                                 Text(
                                     stringResource(R.string.home_continue_playing),
                                     style = MaterialTheme.typography.titleLarge,
@@ -175,9 +175,6 @@ fun HomeScreen(app: GobeApp, onOpenGame: (Long) -> Unit, onOpenSettings: () -> U
                             game = g,
                             onClick = { onOpenGame(g.id) },
                             requestInitialFocus = !hasContinue && g == state.games.first(),
-                            // With no continue row, the first grid tile routes UP to Settings.
-                            modifier = if (!hasContinue && g == state.games.first())
-                                Modifier.focusProperties { up = settingsFocus } else Modifier,
                         )
                     }
                 }
