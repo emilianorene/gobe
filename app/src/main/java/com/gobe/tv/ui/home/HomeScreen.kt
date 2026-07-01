@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -88,43 +89,44 @@ fun HomeScreen(app: GobeApp, onOpenGame: (Long) -> Unit, onOpenSettings: () -> U
             state.games.isEmpty() && !hasContinue && query.isEmpty() && selectedSystem == null ->
                 EmptyState(onOpenSettings)
             else -> {
-                Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
+                // Single scroll: "Continue playing" is a full-span header inside the grid, so it
+                // scrolls away instead of pinning above a separate grid.
+                LazyVerticalGrid(
+                    columns = GridCells.Adaptive(132.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier.fillMaxSize(),
+                ) {
                     if (hasContinue) {
-                        // First focusable row routes UP to the top-bar Settings button.
-                        Column(Modifier.focusProperties { up = settingsFocus }) {
-                            Text(stringResource(R.string.home_continue_playing), style = MaterialTheme.typography.titleLarge)
-                            Spacer(Modifier.height(8.dp))
-                            LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                                items(state.continuePlaying, key = { it.id }) { g ->
-                                    GameTile(
-                                        game = g,
-                                        onClick = { onOpenGame(g.id) },
-                                        requestInitialFocus = g == state.continuePlaying.first(),
-                                    )
+                        item(span = { GridItemSpan(maxLineSpan) }) {
+                            // Topmost focusable content row routes UP to the top-bar Settings button.
+                            Column(Modifier.focusProperties { up = settingsFocus }) {
+                                Text(
+                                    stringResource(R.string.home_continue_playing),
+                                    style = MaterialTheme.typography.titleLarge,
+                                )
+                                Spacer(Modifier.height(8.dp))
+                                LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                                    items(state.continuePlaying, key = { it.id }) { g ->
+                                        GameTile(
+                                            game = g,
+                                            onClick = { onOpenGame(g.id) },
+                                            requestInitialFocus = g == state.continuePlaying.first(),
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
-
-                    if (state.games.isNotEmpty()) {
-                        // When the continue row owns focus the grid must not also request it,
-                        // and only the topmost focusable content row routes UP to Settings.
-                        val gridModifier =
-                            if (hasContinue) Modifier else Modifier.focusProperties { up = settingsFocus }
-                        LazyVerticalGrid(
-                            columns = GridCells.Adaptive(140.dp),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(16.dp),
-                            modifier = gridModifier.fillMaxSize(),
-                        ) {
-                            items(state.games, key = { it.id }) { g ->
-                                GameTile(
-                                    game = g,
-                                    onClick = { onOpenGame(g.id) },
-                                    requestInitialFocus = !hasContinue && g == state.games.first(),
-                                )
-                            }
-                        }
+                    items(state.games, key = { it.id }) { g ->
+                        GameTile(
+                            game = g,
+                            onClick = { onOpenGame(g.id) },
+                            requestInitialFocus = !hasContinue && g == state.games.first(),
+                            // With no continue row, the first grid tile routes UP to Settings.
+                            modifier = if (!hasContinue && g == state.games.first())
+                                Modifier.focusProperties { up = settingsFocus } else Modifier,
+                        )
                     }
                 }
             }
