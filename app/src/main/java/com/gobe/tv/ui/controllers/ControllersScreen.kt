@@ -53,11 +53,14 @@ fun ControllersListScreen(rows: List<ControllerRow>, onSelect: (String) -> Unit)
 fun ControllerDetailScreen(
     name: String,
     assignedPort: Int?,
+    swaps: com.gobe.tv.emulation.input.ButtonSwaps,
     activeButtons: Set<PadButton>,
     leftStick: Pair<Float, Float>,
     rightStick: Pair<Float, Float>,
     lastInput: String,
     onAssign: (Int) -> Unit,
+    onToggleSwapAB: () -> Unit,
+    onToggleSwapXY: () -> Unit,
 ) {
     val playFocus = remember { FocusRequester() }
     LaunchedEffect(Unit) { runCatching { playFocus.requestFocus() } }
@@ -73,6 +76,17 @@ fun ControllerDetailScreen(
                     onClick = { onAssign(p) },
                     modifier = if (p == 0) Modifier.focusRequester(playFocus) else Modifier,
                 ) { Text(if (selected) "● P${p + 1}" else "P${p + 1}") }
+            }
+        }
+        Spacer(Modifier.height(16.dp))
+        Text(stringResource(R.string.controllers_buttons) + ":", style = MaterialTheme.typography.titleMedium)
+        Spacer(Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Button(onClick = onToggleSwapAB) {
+                Text((if (swaps.swapAB) "● " else "") + stringResource(R.string.controllers_swap_ab))
+            }
+            Button(onClick = onToggleSwapXY) {
+                Text((if (swaps.swapXY) "● " else "") + stringResource(R.string.controllers_swap_xy))
             }
         }
         Spacer(Modifier.height(24.dp))

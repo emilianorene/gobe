@@ -77,6 +77,9 @@
     <string name="controllers_player">Player</string>
     <string name="controllers_unassigned">Not assigned</string>
     <string name="controllers_select_hint">Select a controller</string>
+    <string name="controllers_buttons">Buttons</string>
+    <string name="controllers_swap_ab">Swap A/B</string>
+    <string name="controllers_swap_xy">Swap X/Y</string>
     <string name="lang_system">System</string>
     <string name="lang_es">Español</string>
     <string name="lang_en">English</string>

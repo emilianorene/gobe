@@ -68,6 +68,9 @@
     <string name="controllers_player">Jugador</string>
     <string name="controllers_unassigned">Sin asignar</string>
     <string name="controllers_select_hint">Seleccioná un control</string>
+    <string name="controllers_buttons">Botones</string>
+    <string name="controllers_swap_ab">Cambiar A/B</string>
+    <string name="controllers_swap_xy">Cambiar X/Y</string>
     <string name="lang_system">Sistema</string>
     <string name="lang_es">Español</string>
     <string name="lang_en">English</string>
