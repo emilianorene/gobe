@@ -95,6 +95,14 @@ adapter does no host-mode USB data with the ONN for any device → definitively 
 our app. Action is on the user's side (proper USB-C OTG adapter or powered hub); Bluetooth remains
 the reliable multi-controller path. Nothing to implement here.
 
+**RESOLVED (won't-fix, hardware) 2026-07-01:** the user tried two USB-C docks (MOKIN MOUC0501,
+UCN3270-2) including the **powered** scenario (charger → dock PD-in → dock → ONN, so the dock powers
+the ONN and exposes downstream USB). Still `host_connected=false`, nothing enumerated. Conclusion:
+the ONN's single USB-C port acts as **power sink only** and does **not** do simultaneous
+PD-sink + USB **host** (no dual-role/DRP host+power like a laptop). USB controllers are therefore not
+viable on this ONN via that port; **Bluetooth is the supported multi-controller path** (pair 2+ BT
+pads, use the player-assignment from sub-project B). No app work possible.
+
 ## Other noted follow-ups
 
 - Genre filter/browse on Home (genre data already in the index + Room).
