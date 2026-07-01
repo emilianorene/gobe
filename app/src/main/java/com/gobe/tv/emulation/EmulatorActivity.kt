@@ -287,19 +287,21 @@ class EmulatorActivity : ComponentActivity() {
             if (event.action == KeyEvent.ACTION_UP) togglePause()
             return true
         }
-        // Track Select/Start to detect the combo.
-        if (code == KeyEvent.KEYCODE_BUTTON_SELECT || code == KeyEvent.KEYCODE_BUTTON_START) {
+        // Track the configured hotkey's buttons; the simultaneous combo opens the menu, but the
+        // individual buttons still reach the core so they stay usable in games.
+        if (code in menuHotkey.codes) {
             if (event.action == KeyEvent.ACTION_DOWN) heldKeys.add(code) else heldKeys.remove(code)
-            val combo = heldKeys.contains(KeyEvent.KEYCODE_BUTTON_SELECT) &&
-                heldKeys.contains(KeyEvent.KEYCODE_BUTTON_START)
-            if (combo && !paused) {
+            if (isHotkeyCombo(heldKeys, menuHotkey) && !paused) {
                 heldKeys.clear()
                 togglePause()
-                return true // swallow — don't leak Select/Start to the core
+                return true // swallow — don't leak the combo to the core
             }
-            // While paused, let the overlay handle nav; otherwise forward to the core as normal input.
             if (paused) return super.dispatchKeyEvent(event)
-            retroView?.sendKeyEvent(event.action, applyMapping(code, remapForInput(event.deviceId), swapsForInput(event.deviceId)), portForInput(event.deviceId))
+            retroView?.sendKeyEvent(
+                event.action,
+                applyMapping(code, remapForInput(event.deviceId), swapsForInput(event.deviceId)),
+                portForInput(event.deviceId),
+            )
             return true
         }
         if (paused) return super.dispatchKeyEvent(event) // overlay handles D-pad

@@ -17,6 +17,7 @@ import androidx.tv.material3.Text
 import com.gobe.tv.R
 import com.gobe.tv.emulation.GameSettings
 import com.gobe.tv.emulation.input.DeadzoneLevel
+import com.gobe.tv.emulation.input.MenuHotkey
 import com.gobe.tv.i18n.AppLanguage
 import com.gobe.tv.i18n.LocaleManager
 
@@ -28,6 +29,7 @@ fun SettingsScreen(onOpenFolders: () -> Unit, onBack: () -> Unit) {
     LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
     val current = remember { LocaleManager.getLanguage(context) }
     var deadzone by remember { mutableStateOf(GameSettings.loadDeadzone(context)) }
+    var hotkey by remember { mutableStateOf(GameSettings.loadMenuHotkey(context)) }
 
     fun choose(language: AppLanguage) {
         if (language != LocaleManager.getLanguage(context)) {
@@ -74,6 +76,17 @@ fun SettingsScreen(onOpenFolders: () -> Unit, onBack: () -> Unit) {
             levels.forEach { (level, labelRes) ->
                 Button(onClick = { GameSettings.saveDeadzone(context, level); deadzone = level }) {
                     Text((if (deadzone == level) "● " else "") + stringResource(labelRes))
+                }
+            }
+        }
+
+        Spacer(Modifier.height(24.dp))
+        Text(stringResource(R.string.settings_menu_hotkey), style = MaterialTheme.typography.titleLarge)
+        Spacer(Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            MenuHotkey.values().forEach { hk ->
+                Button(onClick = { GameSettings.saveMenuHotkey(context, hk); hotkey = hk }) {
+                    Text((if (hotkey == hk) "● " else "") + stringResource(hk.labelRes))
                 }
             }
         }
