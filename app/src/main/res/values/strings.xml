@@ -53,6 +53,7 @@
     <string name="emu_state_save_failed">Couldn\'t save state</string>
     <string name="emu_no_state">No saved state</string>
     <string name="emu_state_load_failed">Couldn\'t load state</string>
+    <string name="emu_load_failed">Couldn\'t load this game. The romset may not match the core, or a required file is missing.</string>
 
     <!-- Settings -->
     <string name="settings_title">Settings</string>

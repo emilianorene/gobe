@@ -42,9 +42,15 @@ class EmulatorActivity : ComponentActivity() {
     private var hasState by mutableStateOf(false)
 
     private var coreReadyHandled = false
+    private var loadErrorHandled = false
 
     private val savesDir: File get() = File(filesDir, "saves").apply { mkdirs() }
     private val sramFile: File get() = File(savesDir, "${args.gameId}.srm")
+
+    /** User-accessible folder where the user drops arcade BIOS/aux files. Created if missing.
+     *  Only systemDirectory moves out of filesDir; save states stay app-private. */
+    private val systemDir: File
+        get() = File(android.os.Environment.getExternalStorageDirectory(), "Download/ROMs/system").apply { mkdirs() }
 
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(LocaleManager.wrap(newBase))
@@ -74,7 +80,7 @@ class EmulatorActivity : ComponentActivity() {
         val data = GLRetroViewData(this).apply {
             coreFilePath = corePath
             gameFilePath = args.romPath
-            systemDirectory = filesDir.absolutePath
+            systemDirectory = systemDir.absolutePath
             savesDirectory = savesDir.absolutePath
             saveRAMState = sramFile.takeIf { it.exists() }?.readBytes()
         }
@@ -114,6 +120,16 @@ class EmulatorActivity : ComponentActivity() {
                 if (event is GLRetroView.GLRetroEvents.FrameRendered && !coreReadyHandled) {
                     coreReadyHandled = true
                     onCoreReady()
+                }
+            }
+        }
+
+        lifecycleScope.launch {
+            view.getGLRetroErrors().collect {
+                if (!loadErrorHandled && !isFinishing) {
+                    loadErrorHandled = true
+                    Toast.makeText(this@EmulatorActivity, getString(R.string.emu_load_failed), Toast.LENGTH_LONG).show()
+                    finish()
                 }
             }
         }

@@ -45,6 +45,7 @@
     <string name="emu_state_save_failed">No se pudo guardar el estado</string>
     <string name="emu_no_state">No hay estado guardado</string>
     <string name="emu_state_load_failed">No se pudo cargar el estado</string>
+    <string name="emu_load_failed">No se pudo cargar este juego. El romset puede no coincidir con el core, o falta un archivo requerido.</string>
 
     <string name="settings_title">Ajustes</string>
     <string name="settings_language">Idioma</string>
