@@ -59,5 +59,13 @@ fun PauseOverlay(
         }
 
         Button(onClick = onExit, modifier = Modifier.width(320.dp)) { Text("🏠  " + stringResource(R.string.pause_exit_to_gobe)) }
+
+        // Subtle control legend reflecting the real bindings.
+        Text(
+            "Ⓐ " + stringResource(R.string.pause_legend_select) +
+                "  ·  Ⓑ/Back " + stringResource(R.string.pause_legend_close),
+            style = MaterialTheme.typography.labelSmall,
+            color = Color.White.copy(alpha = 0.6f),
+        )
     }
 }
