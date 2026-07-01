@@ -28,7 +28,6 @@ import com.gobe.tv.GobeApp
 import com.gobe.tv.R
 import com.gobe.tv.data.art.BoxartUrlBuilder
 import com.gobe.tv.domain.Game
-import com.gobe.tv.domain.System
 import com.gobe.tv.emulation.EmulatorActivity
 import com.gobe.tv.emulation.EmulatorArgs
 import com.gobe.tv.emulation.SaveStateStore
