@@ -80,6 +80,10 @@
     <string name="controllers_buttons">Buttons</string>
     <string name="controllers_swap_ab">Swap A/B</string>
     <string name="controllers_swap_xy">Swap X/Y</string>
+    <string name="controllers_remap">Remap buttons</string>
+    <string name="controllers_remap_default">default</string>
+    <string name="controllers_remap_press">Press a button on the controller…</string>
+    <string name="controllers_remap_reset">Reset remap</string>
     <string name="lang_system">System</string>
     <string name="lang_es">Español</string>
     <string name="lang_en">English</string>

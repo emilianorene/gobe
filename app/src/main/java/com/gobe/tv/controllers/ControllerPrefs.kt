@@ -1,8 +1,11 @@
 package com.gobe.tv.controllers
 
 import android.content.Context
+import com.gobe.tv.emulation.input.ButtonRemap
 import com.gobe.tv.emulation.input.ButtonSwaps
 import com.gobe.tv.emulation.input.ControllerAssignments
+import com.gobe.tv.emulation.input.parseRemap
+import com.gobe.tv.emulation.input.serializeRemap
 
 /** Persists ControllerAssignments in the shared gobe.settings prefs, one key per descriptor
  *  (descriptors are opaque vendor strings, so per-key storage avoids delimiter issues). */
@@ -11,6 +14,7 @@ object ControllerPrefs {
     private const val PREFIX = "ctrl.port."
     private const val SWAP_AB = "ctrl.swapab."
     private const val SWAP_XY = "ctrl.swapxy."
+    private const val REMAP = "ctrl.remap."
 
     private fun prefs(c: Context) = c.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
@@ -45,5 +49,16 @@ object ControllerPrefs {
             .putBoolean(SWAP_AB + descriptor, s.swapAB)
             .putBoolean(SWAP_XY + descriptor, s.swapXY)
             .apply()
+    }
+
+    fun loadRemaps(context: Context): Map<String, ButtonRemap> {
+        val p = prefs(context)
+        return p.all.keys.filter { it.startsWith(REMAP) }.associate { k ->
+            k.removePrefix(REMAP) to parseRemap(p.getString(k, null))
+        }
+    }
+
+    fun saveRemap(context: Context, descriptor: String, r: ButtonRemap) {
+        prefs(context).edit().putString(REMAP + descriptor, serializeRemap(r)).apply()
     }
 }

@@ -18,6 +18,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.tv.material3.LocalContentColor
 import androidx.tv.material3.MaterialTheme
+import com.gobe.tv.emulation.input.ButtonRemap
 import com.gobe.tv.emulation.input.ButtonSwaps
 import com.gobe.tv.emulation.input.ControllerAssignments
 import com.gobe.tv.emulation.input.PadButton
@@ -37,6 +38,8 @@ class ControllersActivity : ComponentActivity() {
 
     private var assignments by mutableStateOf(ControllerAssignments())
     private var swaps by mutableStateOf<Map<String, ButtonSwaps>>(emptyMap())
+    private var remaps by mutableStateOf<Map<String, ButtonRemap>>(emptyMap())
+    private var capturingTarget by mutableStateOf<Int?>(null) // target keycode being bound; null = idle
     private var rows by mutableStateOf<List<ControllerRow>>(emptyList())
     private var selected by mutableStateOf<String?>(null) // selected descriptor; null = list view
 
@@ -62,6 +65,7 @@ class ControllersActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         assignments = ControllerPrefs.load(this)
         swaps = ControllerPrefs.loadSwaps(this)
+        remaps = ControllerPrefs.loadRemaps(this)
         refreshDevices()
         setContent {
             GobeTheme {
@@ -83,6 +87,8 @@ class ControllersActivity : ComponentActivity() {
                                 leftStick = leftStick,
                                 rightStick = rightStick,
                                 lastInput = lastInput,
+                                remap = remaps[sel] ?: ButtonRemap(),
+                                capturingTarget = capturingTarget,
                                 onAssign = { port ->
                                     assignments = assignments.assign(sel, port)
                                     ControllerPrefs.save(this@ControllersActivity, assignments)
@@ -97,6 +103,12 @@ class ControllersActivity : ComponentActivity() {
                                     val next = (swaps[sel] ?: ButtonSwaps()).let { it.copy(swapXY = !it.swapXY) }
                                     ControllerPrefs.saveSwaps(this@ControllersActivity, sel, next)
                                     swaps = swaps + (sel to next)
+                                },
+                                onCaptureStart = { target -> capturingTarget = target },
+                                onResetRemap = {
+                                    val cleared = ButtonRemap()
+                                    ControllerPrefs.saveRemap(this@ControllersActivity, sel, cleared)
+                                    remaps = remaps + (sel to cleared)
                                 },
                             )
                         }
@@ -142,13 +154,39 @@ class ControllersActivity : ComponentActivity() {
 
     private fun backToList() {
         selected = null
+        capturingTarget = null
         keyButtons = emptySet()
         axisButtons = emptySet()
         leftStick = 0f to 0f
         rightStick = 0f to 0f
     }
 
+    private fun isDpadButton(p: PadButton) = p == PadButton.DPAD_UP || p == PadButton.DPAD_DOWN ||
+        p == PadButton.DPAD_LEFT || p == PadButton.DPAD_RIGHT
+
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        // Capture mode takes priority (DOWN binds, UP-Back cancels — the asymmetry is intentional).
+        val cap = capturingTarget
+        if (cap != null) {
+            if (event.keyCode == KeyEvent.KEYCODE_BACK) {
+                if (event.action == KeyEvent.ACTION_UP) capturingTarget = null
+                return true // consume Back = cancel; never leave or bind
+            }
+            val sel = selected
+            val capPad = keyCodeToPadButton(event.keyCode)
+            val eligible = capPad != null && !isDpadButton(capPad)
+            if (event.action == KeyEvent.ACTION_DOWN && eligible && sel != null &&
+                InputDevice.getDevice(event.deviceId)?.descriptor == sel
+            ) {
+                val next = (remaps[sel] ?: ButtonRemap()).bind(event.keyCode, cap)
+                ControllerPrefs.saveRemap(this, sel, next)
+                remaps = remaps + (sel to next)
+                capturingTarget = null
+                return true // consume the bound press
+            }
+            // Ineligible (D-pad/unknown) during capture: don't bind; let it navigate the UI.
+            return super.dispatchKeyEvent(event)
+        }
         if (event.keyCode == KeyEvent.KEYCODE_BACK) {
             if (event.action == KeyEvent.ACTION_UP && selected != null) { backToList(); return true }
             return super.dispatchKeyEvent(event) // list view: leave the Activity

@@ -2,7 +2,9 @@ package com.gobe.tv.ui.controllers
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -58,13 +60,22 @@ fun ControllerDetailScreen(
     leftStick: Pair<Float, Float>,
     rightStick: Pair<Float, Float>,
     lastInput: String,
+    remap: com.gobe.tv.emulation.input.ButtonRemap,
+    capturingTarget: Int?,
     onAssign: (Int) -> Unit,
     onToggleSwapAB: () -> Unit,
     onToggleSwapXY: () -> Unit,
+    onCaptureStart: (Int) -> Unit,
+    onResetRemap: () -> Unit,
 ) {
     val playFocus = remember { FocusRequester() }
     LaunchedEffect(Unit) { runCatching { playFocus.requestFocus() } }
-    Column(Modifier.fillMaxSize().padding(48.dp)) {
+    Column(
+        Modifier
+            .fillMaxSize()
+            .padding(48.dp)
+            .verticalScroll(rememberScrollState()),
+    ) {
         Text(name, style = MaterialTheme.typography.headlineMedium)
         Spacer(Modifier.height(12.dp))
         Text(stringResource(R.string.controllers_player) + ":", style = MaterialTheme.typography.titleMedium)
@@ -89,6 +100,44 @@ fun ControllerDetailScreen(
                 Text((if (swaps.swapXY) "● " else "") + stringResource(R.string.controllers_swap_xy))
             }
         }
+
+        // Remap: capture a physical button for each emulator target button.
+        Spacer(Modifier.height(16.dp))
+        Text(stringResource(R.string.controllers_remap) + ":", style = MaterialTheme.typography.titleMedium)
+        if (capturingTarget != null) {
+            Text(
+                stringResource(R.string.controllers_remap_press),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary,
+            )
+        }
+        Spacer(Modifier.height(8.dp))
+        val targets = listOf(
+            PadButton.A to android.view.KeyEvent.KEYCODE_BUTTON_A,
+            PadButton.B to android.view.KeyEvent.KEYCODE_BUTTON_B,
+            PadButton.X to android.view.KeyEvent.KEYCODE_BUTTON_X,
+            PadButton.Y to android.view.KeyEvent.KEYCODE_BUTTON_Y,
+            PadButton.L1 to android.view.KeyEvent.KEYCODE_BUTTON_L1,
+            PadButton.R1 to android.view.KeyEvent.KEYCODE_BUTTON_R1,
+            PadButton.L2 to android.view.KeyEvent.KEYCODE_BUTTON_L2,
+            PadButton.R2 to android.view.KeyEvent.KEYCODE_BUTTON_R2,
+            PadButton.SELECT to android.view.KeyEvent.KEYCODE_BUTTON_SELECT,
+            PadButton.START to android.view.KeyEvent.KEYCODE_BUTTON_START,
+        )
+        targets.chunked(5).forEach { chunk ->
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                chunk.forEach { (label, targetCode) ->
+                    val phys = remap.physicalFor(targetCode)
+                    val bound = phys?.let {
+                        com.gobe.tv.emulation.input.keyCodeToPadButton(it)?.name ?: "#$it"
+                    } ?: stringResource(R.string.controllers_remap_default)
+                    Button(onClick = { onCaptureStart(targetCode) }) { Text("${label.name}: $bound") }
+                }
+            }
+            Spacer(Modifier.height(8.dp))
+        }
+        Button(onClick = onResetRemap) { Text(stringResource(R.string.controllers_remap_reset)) }
+
         Spacer(Modifier.height(24.dp))
         ControllerTestPanel(activeButtons, leftStick, rightStick, lastInput)
     }
