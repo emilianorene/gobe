@@ -51,6 +51,31 @@ B=back). Confirm the real bindings when implementing and make the legend match t
 Acceptance: L1 focuses search, R1 opens settings, and a readable button legend is visible
 on Home; bindings and legend text agree.
 
+## USB controller compatibility — not detected (queued 2026-07-01)
+
+USB gamepads (tried several types) are NOT recognized. Setup: the ONN has a single USB-C port; the
+user connects controllers through a multiport USB-C adapter (HDMI/SD/USB hub). Needed to play with
+multiple controllers.
+
+Two hypotheses to check (needs a USB controller connected to diagnose):
+
+1. **Our detection filter (software — likely culprit for at least some pads).** `ControllersActivity.isGamepad`
+   currently requires **both** `SOURCE_GAMEPAD` AND `SOURCE_JOYSTICK` (tightened in sub-project A to
+   exclude the ONN remote + virtual devices). Many USB gamepads / arcade encoders report
+   `SOURCE_GAMEPAD` **without** `SOURCE_JOYSTICK`, so this AND-filter would hide them. Fix idea:
+   accept `SOURCE_GAMEPAD` alone but exclude the remote/virtual another way (e.g. `!InputDevice.isVirtual`,
+   or exclude devices whose sources are DPAD-only/keyboard-remote). Re-check against the ONN remote so
+   it stays excluded.
+2. **Hardware / USB-OTG (environment).** The ONN's USB-C may not host the controller through that
+   particular hub (power, or the adapter is display-oriented, not a data hub). Verify Android even
+   sees the device: `adb shell dumpsys input | grep -iE "Name:|Sources:"` and
+   `adb shell getprop | grep -i otg` while the USB pad is plugged. If it doesn't appear in `dumpsys`
+   at all, it's the hub/OTG (try a powered hub / different adapter), not our app.
+
+Diagnosis step: connect one USB controller through the adapter and capture `dumpsys input` — if it
+shows up with `SOURCE_GAMEPAD` (with or without JOYSTICK), the fix is our filter (#1); if it doesn't
+show at all, it's hardware (#2).
+
 ## Other noted follow-ups
 
 - Genre filter/browse on Home (genre data already in the index + Room).
