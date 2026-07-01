@@ -103,6 +103,32 @@ PD-sink + USB **host** (no dual-role/DRP host+power like a laptop). USB controll
 viable on this ONN via that port; **Bluetooth is the supported multi-controller path** (pair 2+ BT
 pads, use the player-assignment from sub-project B). No app work possible.
 
+## FDS disk-swap button never appears (BUG, diagnosed 2026-07-01)
+
+The v0.2 FDS disk-swap (merged to main) does not work: the "Change disk (n/N)" button in the pause
+menu **never shows**, even for a genuine 2-side FDS game that prompts "INSERT SIDE B" (verified with
+Zelda no Densetsu on the ONN). The button is gated on `diskCount > 1`, and `diskCount` comes from
+`GLRetroView.getAvailableDisks()`, which is returning ≤1.
+
+Diagnosis so far:
+- Emulation itself is fine (FDS BIOS `disksys.rom` loads, game boots to title, asks to flip disk).
+- Reading the count at `onCoreReady()` (first rendered frame) is too early — that's the FDS BIOS boot
+  screen. Changing it to re-read on every pause-open did **NOT** fix it (still no button at the title
+  screen). So it's not purely a timing issue.
+- Bytecode (`javap -c` on LibretroDroid 0.14.0): `getAvailableDisks()` → `getAvailableDisks(true)` →
+  `runOnEmulationThread(true, {…})`, i.e. it runs **synchronously** on the emulation thread and waits
+  for the result. So it's not an async/returns-0 race.
+
+Next step (needs the ONN, uninterrupted): add temporary logging of the RAW `getAvailableDisks()` /
+`getCurrentDisk()` return values (and any exception) in the disk read, launch a 2-side FDS game, let
+it fully boot, open the menu, and read `adb logcat -s GobeDisk`. That tells us whether the call
+returns 1, 0, throws, or whether fceumm just doesn't expose FDS sides via the libretro disk-control
+interface the way PS1 M3U multi-disc does (LibretroDroid's disk API may be M3U-oriented). If fceumm
+doesn't expose it, options: (a) FDS side-swap via a different core mechanism, (b) drop disk-swap for
+FDS and keep it for future M3U-based multi-disc systems, (c) document as unsupported. **Until fixed,
+the button is simply never shown (harmless — no crash), and disk-swap must NOT be advertised in the
+v0.2 release notes.**
+
 ## Other noted follow-ups
 
 - Genre filter/browse on Home (genre data already in the index + Room).
