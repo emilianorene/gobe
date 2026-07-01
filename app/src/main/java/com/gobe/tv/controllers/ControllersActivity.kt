@@ -11,10 +11,12 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.tv.material3.LocalContentColor
 import androidx.tv.material3.MaterialTheme
 import com.gobe.tv.emulation.input.PadButton
 import com.gobe.tv.emulation.input.keyCodeToPadButton
@@ -53,14 +55,20 @@ class ControllersActivity : ComponentActivity() {
         refreshDevices()
         setContent {
             GobeTheme {
+                // tv-material3 Text reads LocalContentColor, which defaults to black outside a
+                // Surface. Provide the theme's light onBackground so all text is legible.
                 Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-                    ControllersScreen(
-                        devices = devices,
-                        activeButtons = keyButtons + axisButtons,
-                        leftStick = leftStick,
-                        rightStick = rightStick,
-                        lastInput = lastInput,
-                    )
+                    CompositionLocalProvider(
+                        LocalContentColor provides MaterialTheme.colorScheme.onBackground,
+                    ) {
+                        ControllersScreen(
+                            devices = devices,
+                            activeButtons = keyButtons + axisButtons,
+                            leftStick = leftStick,
+                            rightStick = rightStick,
+                            lastInput = lastInput,
+                        )
+                    }
                 }
             }
         }
@@ -79,7 +87,9 @@ class ControllersActivity : ComponentActivity() {
 
     private fun isGamepad(dev: InputDevice?): Boolean {
         val s = dev?.sources ?: return false
-        return (s and InputDevice.SOURCE_GAMEPAD == InputDevice.SOURCE_GAMEPAD) ||
+        // Require BOTH gamepad buttons AND joystick axes — this isolates real controllers from the
+        // TV remote (joystick-only) and virtual input devices (gamepad-only) seen on Android TV.
+        return (s and InputDevice.SOURCE_GAMEPAD == InputDevice.SOURCE_GAMEPAD) &&
             (s and InputDevice.SOURCE_JOYSTICK == InputDevice.SOURCE_JOYSTICK)
     }
 
