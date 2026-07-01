@@ -76,6 +76,19 @@ Diagnosis step: connect one USB controller through the adapter and capture `dump
 shows up with `SOURCE_GAMEPAD` (with or without JOYSTICK), the fix is our filter (#1); if it doesn't
 show at all, it's hardware (#2).
 
+**DIAGNOSED 2026-07-01 → hardware (#2), NOT our app.** With the USB controller connected through the
+multiport adapter: `dumpsys input` shows no gamepad; `dumpsys usb` reports `host_connected=false`,
+`kernel_state=DISCONNECTED`; `/dev/bus/usb/` is empty. The ONN *does* advertise
+`feature:android.hardware.usb.host`, so it supports OTG — but the multiport dongle isn't presenting
+any USB device to the ONN in host mode. **No code fix applies** (Android never sees the device).
+Recommendations for the user: (a) use a dedicated USB-C **OTG** adapter/cable (CC-pin configured for
+host) with the controller plugged directly, not through the display dongle; (b) try a **powered**
+USB-C hub; (c) sanity-check the dongle by inserting a USB flash drive / SD card — if those aren't
+seen either, the dongle isn't doing host-mode data on this device; (d) **Bluetooth is the reliable
+multi-controller path** on the ONN (the Pro Controller already works via BT; pair 2+ BT pads).
+Revisit our `isGamepad` filter (relax to `GAMEPAD && !isVirtual`) only if/when a USB pad actually
+enumerates and is still hidden.
+
 ## Other noted follow-ups
 
 - Genre filter/browse on Home (genre data already in the index + Room).
