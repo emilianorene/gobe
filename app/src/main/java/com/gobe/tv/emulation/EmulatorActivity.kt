@@ -24,6 +24,7 @@ import com.gobe.tv.emulation.input.ButtonRemap
 import com.gobe.tv.emulation.input.ButtonSwaps
 import com.gobe.tv.emulation.input.ControllerAssignments
 import com.gobe.tv.emulation.input.applyMapping
+import com.gobe.tv.emulation.input.nextDisk
 import com.gobe.tv.emulation.input.portForDevice
 import com.gobe.tv.i18n.LocaleManager
 import com.gobe.tv.emulation.ui.PauseOverlay
@@ -50,6 +51,8 @@ class EmulatorActivity : ComponentActivity() {
     // Shown briefly at launch to teach the menu combo; hidden after a delay AND permanently once
     // the menu has been opened (so it never returns on resume).
     private var showControlsHint by mutableStateOf(true)
+    private var diskCount by mutableStateOf(0)
+    private var currentDisk by mutableStateOf(0)
 
     private var coreReadyHandled = false
     private var loadErrorHandled = false
@@ -124,6 +127,9 @@ class EmulatorActivity : ComponentActivity() {
                             onSave = ::saveState,
                             onLoad = ::loadState,
                             onExit = ::exitToMenu,
+                            diskCount = diskCount,
+                            currentDisk = currentDisk,
+                            onChangeDisk = ::changeDisk,
                         )
                     }
                     if (showControlsHint && !paused) {
@@ -165,6 +171,10 @@ class EmulatorActivity : ComponentActivity() {
     private fun onCoreReady() {
         lifecycleScope.launch {
             runCatching { (application as GobeApp).repository.updateLastPlayed(args.gameId) }
+        }
+        retroView?.let { v ->
+            diskCount = runCatching { v.getAvailableDisks() }.getOrDefault(0)
+            currentDisk = runCatching { v.getCurrentDisk() }.getOrDefault(0)
         }
         if (args.loadState) loadState()
     }
@@ -209,6 +219,15 @@ class EmulatorActivity : ComponentActivity() {
     private fun exitToMenu() {
         autoSave()
         finish()
+    }
+
+    private fun changeDisk() {
+        val v = retroView ?: return
+        if (diskCount <= 1) return
+        val next = nextDisk(currentDisk, diskCount)
+        runCatching { v.changeDisk(next) }
+        currentDisk = next
+        toast(getString(R.string.emu_disk_changed, next + 1))
     }
 
     private fun autoSave() {

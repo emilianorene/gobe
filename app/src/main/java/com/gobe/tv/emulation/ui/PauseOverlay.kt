@@ -33,6 +33,9 @@ fun PauseOverlay(
     onSave: () -> Unit,
     onLoad: () -> Unit,
     onExit: () -> Unit,
+    diskCount: Int,
+    currentDisk: Int,
+    onChangeDisk: () -> Unit,
 ) {
     val resumeFocus = remember { FocusRequester() }
     LaunchedEffect(Unit) { runCatching { resumeFocus.requestFocus() } }
@@ -59,6 +62,12 @@ fun PauseOverlay(
         }
 
         Button(onClick = onExit, modifier = Modifier.width(320.dp)) { Text("🏠  " + stringResource(R.string.pause_exit_to_gobe)) }
+
+        if (diskCount > 1) {
+            Button(onClick = onChangeDisk, modifier = Modifier.width(320.dp)) {
+                Text("💿  " + stringResource(R.string.pause_change_disk, currentDisk + 1, diskCount))
+            }
+        }
 
         // Subtle control legend reflecting the real bindings.
         Text(
