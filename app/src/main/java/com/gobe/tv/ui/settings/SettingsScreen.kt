@@ -53,5 +53,9 @@ fun SettingsScreen(onOpenFolders: () -> Unit, onBack: () -> Unit) {
 
         Spacer(Modifier.height(32.dp))
         Button(onClick = onOpenFolders) { Text(stringResource(R.string.settings_folders)) }
+        Spacer(Modifier.height(12.dp))
+        Button(onClick = {
+            context.startActivity(android.content.Intent(context, com.gobe.tv.controllers.ControllersActivity::class.java))
+        }) { Text(stringResource(R.string.settings_controllers)) }
     }
 }
