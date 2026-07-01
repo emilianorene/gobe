@@ -8,3 +8,8 @@ captures/
 .cxx/
 .kotlin/
 .superpowers/
+.claude/
+
+# Signing (keep private, back up separately)
+gobe-release.keystore
+keystore.properties
