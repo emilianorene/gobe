@@ -29,8 +29,11 @@ interface GameDao {
     @Query("SELECT * FROM games WHERE lastPlayed IS NOT NULL ORDER BY lastPlayed DESC LIMIT :limit")
     fun observeContinuePlaying(limit: Int): Flow<List<GameEntity>>
 
-    @Query("SELECT * FROM games WHERE displayName LIKE '%' || :q || '%' AND (:system IS NULL OR system = :system) ORDER BY displayName COLLATE NOCASE ASC")
-    fun searchGames(q: String, system: String?): kotlinx.coroutines.flow.Flow<List<GameEntity>>
+    @Query("SELECT DISTINCT genre FROM games WHERE genre IS NOT NULL AND genre != '' ORDER BY genre COLLATE NOCASE ASC")
+    fun distinctGenres(): Flow<List<String>>
+
+    @Query("SELECT * FROM games WHERE displayName LIKE '%' || :q || '%' AND (:system IS NULL OR system = :system) AND (:genre IS NULL OR genre = :genre) ORDER BY displayName COLLATE NOCASE ASC")
+    fun searchGames(q: String, system: String?, genre: String?): Flow<List<GameEntity>>
 
     @Query("UPDATE games SET players = :players, boxartName = :boxartName, genre = :genre, year = :year WHERE id = :id")
     suspend fun updateMeta(id: Long, players: Int?, boxartName: String?, genre: String?, year: Int?)
