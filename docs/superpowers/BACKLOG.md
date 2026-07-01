@@ -89,6 +89,12 @@ multi-controller path** on the ONN (the Pro Controller already works via BT; pai
 Revisit our `isGamepad` filter (relax to `GAMEPAD && !isVirtual`) only if/when a USB pad actually
 enumerates and is still hidden.
 
+**CONFIRMED 2026-07-01:** a USB flash drive AND an SD card in the same multiport adapter are ALSO
+not seen (no USB/SD volume in `sm list-volumes` / `/mnt/media_rw`; `host_connected=false`). So the
+adapter does no host-mode USB data with the ONN for any device → definitively the adapter/OTG, not
+our app. Action is on the user's side (proper USB-C OTG adapter or powered hub); Bluetooth remains
+the reliable multi-controller path. Nothing to implement here.
+
 ## Other noted follow-ups
 
 - Genre filter/browse on Home (genre data already in the index + Room).
