@@ -84,10 +84,12 @@ class ControllersActivity : ComponentActivity() {
     }
 
     private fun refreshDevices() {
-        devices = InputDevice.getDeviceIds()
-            .mapNotNull { InputDevice.getDevice(it) }
-            .filter { isGamepad(it) }
-            .map { it.name }
+        val names = mutableListOf<String>()
+        for (id in InputDevice.getDeviceIds()) {
+            val dev = InputDevice.getDevice(id) ?: continue
+            if (isGamepad(dev)) names.add(dev.name)
+        }
+        devices = names
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
