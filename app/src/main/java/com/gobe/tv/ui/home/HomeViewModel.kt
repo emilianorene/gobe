@@ -22,13 +22,19 @@ class HomeViewModel(private val repo: LibraryRepository, defaultPath: String) : 
     val query: StateFlow<String> = _query
     private val _selectedSystem = MutableStateFlow<System?>(null)
     val selectedSystem: StateFlow<System?> = _selectedSystem
+    private val _selectedGenre = MutableStateFlow<String?>(null)
+    val selectedGenre: StateFlow<String?> = _selectedGenre
 
     fun setQuery(q: String) { _query.value = q }
     fun setSystem(s: System?) { _selectedSystem.value = s }
+    fun setGenre(g: String?) { _selectedGenre.value = g }
+
+    val genres: StateFlow<List<String>> =
+        repo.genres().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private val filtered: Flow<List<Game>> =
-        combine(_query, _selectedSystem) { q, s -> q to s }
-            .flatMapLatest { (q, s) -> repo.searchGames(q, s) }
+        combine(_query, _selectedSystem, _selectedGenre) { q, s, g -> Triple(q, s, g) }
+            .flatMapLatest { (q, s, g) -> repo.searchGames(q, s, g) }
 
     val state: StateFlow<HomeState> =
         combine(repo.observeContinuePlaying(), filtered, scanning) { cont, games, scan ->

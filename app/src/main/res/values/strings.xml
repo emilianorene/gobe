@@ -49,6 +49,9 @@
     <string name="pause_load_none">Load state (no save)</string>
     <string name="pause_exit">Exit to menu</string>
     <string name="pause_exit_to_gobe">Exit to Gobe</string>
+    <string name="controls_hint_menu">Menu: Select + Start · or Back</string>
+    <string name="pause_legend_select">Select</string>
+    <string name="pause_legend_close">Close</string>
 
     <!-- Emulator toasts -->
     <string name="emu_core_unavailable">Core not available for %1$s</string>
