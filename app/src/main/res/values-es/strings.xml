@@ -71,6 +71,10 @@
     <string name="controllers_buttons">Botones</string>
     <string name="controllers_swap_ab">Cambiar A/B</string>
     <string name="controllers_swap_xy">Cambiar X/Y</string>
+    <string name="controllers_remap">Remapear botones</string>
+    <string name="controllers_remap_default">default</string>
+    <string name="controllers_remap_press">Apretá un botón del control…</string>
+    <string name="controllers_remap_reset">Restablecer remapeo</string>
     <string name="lang_system">Sistema</string>
     <string name="lang_es">Español</string>
     <string name="lang_en">English</string>
