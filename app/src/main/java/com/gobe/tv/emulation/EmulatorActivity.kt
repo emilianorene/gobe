@@ -20,8 +20,10 @@ import androidx.lifecycle.lifecycleScope
 import com.gobe.tv.GobeApp
 import com.gobe.tv.R
 import com.gobe.tv.controllers.ControllerPrefs
+import com.gobe.tv.emulation.input.ButtonSwaps
 import com.gobe.tv.emulation.input.ControllerAssignments
 import com.gobe.tv.emulation.input.portForDevice
+import com.gobe.tv.emulation.input.remapCode
 import com.gobe.tv.i18n.LocaleManager
 import com.gobe.tv.emulation.ui.PauseOverlay
 import com.gobe.tv.ui.theme.GobeTheme
@@ -53,6 +55,8 @@ class EmulatorActivity : ComponentActivity() {
 
     // Player/port routing: which controller (by descriptor) drives which port. Loaded in onCreate.
     private var assignments = ControllerAssignments()
+    // Per-controller A/B, X/Y swaps, read once at launch (mid-session changes need a relaunch).
+    private var swapsByDescriptor: Map<String, ButtonSwaps> = emptyMap()
 
     private val savesDir: File get() = File(filesDir, "saves").apply { mkdirs() }
     private val sramFile: File get() = File(savesDir, "${args.gameId}.srm")
@@ -73,6 +77,7 @@ class EmulatorActivity : ComponentActivity() {
 
         args = EmulatorArgs.fromIntent(intent)
         assignments = ControllerPrefs.load(this)
+        swapsByDescriptor = ControllerPrefs.loadSwaps(this)
         saveStore = SaveStateStore(filesDir)
         hasState = saveStore.hasState(args.gameId)
 
@@ -229,6 +234,10 @@ class EmulatorActivity : ComponentActivity() {
     private fun portForInput(deviceId: Int): Int =
         portForDevice(InputDevice.getDevice(deviceId)?.descriptor, assignments)
 
+    // Null/unknown descriptor -> no-swap default, so unconfigured controllers play normally.
+    private fun swapsForInput(deviceId: Int): ButtonSwaps =
+        swapsByDescriptor[InputDevice.getDevice(deviceId)?.descriptor] ?: ButtonSwaps()
+
     private val heldKeys = HashSet<Int>()
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
@@ -255,11 +264,11 @@ class EmulatorActivity : ComponentActivity() {
             }
             // While paused, let the overlay handle nav; otherwise forward to the core as normal input.
             if (paused) return super.dispatchKeyEvent(event)
-            retroView?.sendKeyEvent(event.action, code, portForInput(event.deviceId))
+            retroView?.sendKeyEvent(event.action, remapCode(code, swapsForInput(event.deviceId)), portForInput(event.deviceId))
             return true
         }
         if (paused) return super.dispatchKeyEvent(event) // overlay handles D-pad
-        retroView?.sendKeyEvent(event.action, code, portForInput(event.deviceId))
+        retroView?.sendKeyEvent(event.action, remapCode(code, swapsForInput(event.deviceId)), portForInput(event.deviceId))
         return true
     }
 
