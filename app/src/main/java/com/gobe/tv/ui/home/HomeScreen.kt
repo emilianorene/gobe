@@ -15,14 +15,17 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.nativeKeyCode
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -193,6 +196,14 @@ private fun SearchField(
     modifier: Modifier = Modifier,
 ) {
     val textColor = MaterialTheme.colorScheme.onSurface
+    val focusManager = LocalFocusManager.current
+    val keyboard = LocalSoftwareKeyboardController.current
+    // Leave the search box: dismiss the keyboard and move focus down into the content, so the
+    // user isn't trapped in the field (the IME "search" key and D-pad Down both do this).
+    fun leaveSearch() {
+        keyboard?.hide()
+        focusManager.moveFocus(FocusDirection.Down)
+    }
     Box(
         modifier
             .height(48.dp)
@@ -207,7 +218,16 @@ private fun SearchField(
             textStyle = TextStyle(color = textColor, fontSize = 16.sp),
             cursorBrush = androidx.compose.ui.graphics.SolidColor(textColor),
             keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(imeAction = ImeAction.Search),
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp).focusRequester(focusRequester),
+            keyboardActions = androidx.compose.foundation.text.KeyboardActions(onSearch = { leaveSearch() }),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+                .focusRequester(focusRequester)
+                .onPreviewKeyEvent { e ->
+                    if (e.type == KeyEventType.KeyDown && e.key == Key.DirectionDown) {
+                        leaveSearch(); true
+                    } else false
+                },
             decorationBox = { inner ->
                 if (value.isEmpty()) {
                     Text(
