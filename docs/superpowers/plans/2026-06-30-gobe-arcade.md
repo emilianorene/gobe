@@ -6,9 +6,30 @@
 
 **Architecture:** Reuse the Fase 2 stack unchanged (`EmulatorActivity` + `GLRetroView`, `CoreManager`, jniLibs core packaging, save states, Select+Start menu). This sub-project (a) **spikes** the right core/romset on-device against the user's real `.zip`, (b) bundles that core for `armeabi-v7a`, (c) maps `ARCADE → core` in `CoreManager`, (d) broadens the detail-screen "Jugar" gate to "a core exists for this system", (e) moves the emulator `systemDirectory` to a user-accessible external folder so the user can drop BIOS zips there, and (f) subscribes to LibretroDroid's error stream so a bad romset/missing BIOS shows a message and returns to the library instead of crashing.
 
-**Tech Stack:** Kotlin, Jetpack Compose for TV, LibretroDroid 0.14.0 (`GLRetroView`, `GLRetroViewData`, `getGLRetroErrors()`), a MAME Libretro core (`mame2003_plus` candidate, `armeabi-v7a`), Room, JUnit (JVM unit tests) + on-device verification over wireless adb.
+**Tech Stack:** Kotlin, Jetpack Compose for TV, LibretroDroid 0.14.0 (`GLRetroView`, `GLRetroViewData`, `getGLRetroErrors()`), the **FBNeo** Libretro core (`armeabi-v7a`), Room, JUnit (JVM unit tests) + on-device verification over wireless adb.
 
 **Spec:** `docs/superpowers/specs/2026-06-30-gobe-arcade-design.md`
+
+## Spike outcome (Task 1 — DONE 2026-06-30)
+
+On-device spike against the user's 15 real arcade `.zip` files pinned the following:
+
+- **Pinned core: FBNeo** (`libfbneo_libretro_android.so`, armeabi-v7a, committed). It boots
+  **13/15** user games. `mame2003_plus` (the spec's first candidate) only booted 7/15, so it
+  was rejected. The user's set matches the **current FBNeo romset**, not the MAME 0.78 set.
+- **The 2 non-booting games** are romset-completeness issues in those specific zips (out of
+  scope per spec §4 — user adds the file later): `mvsc` needs `mvsc.key` (CPS2 key, CRC
+  `0x7e101e09`); `xmen` needs `xmen_eba.nv` (CRC-specific NVRAM default).
+- **Error-signal finding (changes Task 4):** for a bad/incomplete romset, **FBNeo renders its
+  own informative error screen** (blue "FBNeo Error", names the exact missing file) as GL
+  frames and does **NOT** emit `getGLRetroErrors()`. So FBNeo's own screen is the primary
+  error UX; the user backs out via the pause menu (Back → Exit to Gobe). We still subscribe to
+  `getGLRetroErrors()` as a safety net for hard failures, but it is not the main romset-error
+  path (unlike mame2003_plus, which failed cleanly with a real error signal).
+- **BIOS:** none of the user's current games need a system BIOS (no Neo Geo). The external
+  `systemDirectory` (Task 3) is still implemented for future-proofing (Neo Geo etc.).
+- Verified real boots visually: `ffight` (CPS1 region warning), `contra` (RAM/ROM POST),
+  `mvsc` (showed the FBNeo error screen — correctly not a real boot).
 
 ---
 
@@ -20,8 +41,8 @@
 
 ## File map (what each task touches)
 
-- `app/src/main/jniLibs/armeabi-v7a/lib<core>_libretro_android.so` — **Create**: the bundled arcade core (exact `<core>` pinned by the spike). Sits beside `libsnes9x_libretro_android.so`.
-- `app/src/main/java/com/gobe/tv/emulation/CoreManager.kt` — **Modify**: add `System.ARCADE → "lib<core>_libretro_android.so"`.
+- `app/src/main/jniLibs/armeabi-v7a/libfbneo_libretro_android.so` — **DONE** (Task 1): the bundled FBNeo core, committed. Sits beside `libsnes9x_libretro_android.so`.
+- `app/src/main/java/com/gobe/tv/emulation/CoreManager.kt` — **Modify**: add `System.ARCADE → "libfbneo_libretro_android.so"`.
 - `app/src/test/java/com/gobe/tv/emulation/CoreManagerTest.kt` — **Modify**: ARCADE now resolves; only NES/N64 stay null.
 - `app/src/main/java/com/gobe/tv/emulation/EmulatorActivity.kt` — **Modify**: external `systemDirectory` (created if missing); subscribe to `getGLRetroErrors()` to show a message + finish.
 - `app/src/main/res/values/strings.xml` + `app/src/main/res/values-es/strings.xml` — **Modify**: add the load-error string (EN + ES).
@@ -66,9 +87,9 @@ Expected: `... ARM, EABI5 ... 32-bit ...` (NOT `aarch64`). If 64-bit or 404, try
 Place the `.so` in jniLibs and add a temporary ARCADE mapping just to boot the spike (this becomes permanent in Tasks 2-3 once pinned):
 ```bash
 cp mame2003_plus_libretro_android.so \
-  "app/src/main/jniLibs/armeabi-v7a/libmame2003_plus_libretro_android.so"
+  "app/src/main/jniLibs/armeabi-v7a/libfbneo_libretro_android.so"
 ```
-Temporarily edit `CoreManager.corePath` to map `System.ARCADE -> "libmame2003_plus_libretro_android.so"`, and temporarily set `DetailScreen` `playable` to also allow ARCADE, so a game can be launched. (These are throwaway edits to enable the spike; Tasks 2-5 implement them properly with tests.)
+Temporarily edit `CoreManager.corePath` to map `System.ARCADE -> "libfbneo_libretro_android.so"`, and temporarily set `DetailScreen` `playable` to also allow ARCADE, so a game can be launched. (These are throwaway edits to enable the spike; Tasks 2-5 implement them properly with tests.)
 
 - [ ] **Step 4: Build, install, and launch a user arcade game on the ONN**
 
@@ -116,14 +137,14 @@ Record for RESULTS: pinned `<core>`, romset version, BIOS-needing games, and the
 - Modify: `app/src/test/java/com/gobe/tv/emulation/CoreManagerTest.kt`
 - Modify: `app/src/main/java/com/gobe/tv/emulation/CoreManager.kt`
 
-Use the exact `<core>` filename pinned in Task 1 (placeholder below: `mame2003_plus`).
+Core pinned in Task 1: **FBNeo** (`libfbneo_libretro_android.so`).
 
 - [ ] **Step 1: Update the failing test**
 
 In `CoreManagerTest.kt`, add an ARCADE-resolves assertion and remove ARCADE from the null list:
 ```kotlin
     @Test fun arcadeResolvesToBundledCore() =
-        assertEquals("/data/app/x/lib/arm/libmame2003_plus_libretro_android.so", cm.corePath(System.ARCADE))
+        assertEquals("/data/app/x/lib/arm/libfbneo_libretro_android.so", cm.corePath(System.ARCADE))
 
     @Test fun unsupportedSystemsAreNullForNow() {
         assertNull(cm.corePath(System.NES))
@@ -142,11 +163,11 @@ In `CoreManager.kt`, extend the `when`:
 ```kotlin
         val lib = when (system) {
             System.SNES -> "libsnes9x_libretro_android.so"
-            System.ARCADE -> "libmame2003_plus_libretro_android.so"
+            System.ARCADE -> "libfbneo_libretro_android.so"
             else -> return null
         }
 ```
-Update the class KDoc: "Resolves the bundled Libretro core .so path for a system. SNES (snes9x) and Arcade (mame2003_plus) are wired; NES/N64 not yet."
+Update the class KDoc: "Resolves the bundled Libretro core .so path for a system. SNES (snes9x) and Arcade (FBNeo) are wired; NES/N64 not yet."
 
 - [ ] **Step 4: Run the test, verify it passes**
 
@@ -209,7 +230,15 @@ git commit -m "feat(arcade): point emulator systemDirectory at user-accessible D
 - Modify: `app/src/main/res/values-es/strings.xml`
 - Modify: `app/src/main/java/com/gobe/tv/emulation/EmulatorActivity.kt`
 
-Use the **exact error signal confirmed in Task 1 Step 6**. The default below assumes `getGLRetroErrors()` emits on load failure; if Task 1 found a different signal, implement that instead (note the deviation in RESULTS).
+**Task-1 finding — FBNeo self-renders its error screen.** For a bad/incomplete romset, FBNeo
+shows its own informative "FBNeo Error" screen (names the exact missing file) and does **NOT**
+emit `getGLRetroErrors()`. That screen is therefore the *primary* romset-error UX, and it's
+better than a generic toast. This task's job is narrowed to two things: (1) keep a
+`getGLRetroErrors()` subscription as a **safety net** for hard failures (harmless, one-shot);
+(2) make sure the user can **always leave** the FBNeo error screen back to the grid via the
+existing pause menu (Back → Exit to Gobe). Verify (2) on-device in Task 6; if Back already
+works from the error screen (it should — `dispatchKeyEvent` handles Back globally), no extra
+code is needed beyond the safety-net collector.
 
 - [ ] **Step 1: Add the load-error string (EN + ES)**
 
@@ -320,7 +349,7 @@ Expected: the folder exists (created on first launch of an arcade game). Tell th
   - Launch a known-good arcade game (from the Task 1 spike) → it **renders with audio**.
   - **Gamepad** controls move/act in-game.
   - **Select+Start** opens the pause menu; **Exit to Gobe** returns to the grid.
-  - A **deliberately-bad romset** shows the `emu_load_failed` message and returns to the grid (no crash).
+  - An **incomplete romset** (e.g. `mvsc` — missing `mvsc.key`) shows FBNeo's own "FBNeo Error" screen (no crash), and **Back → Exit to Gobe** returns to the grid.
   - SNES still launches (regression: the broadened `playable` + external `systemDirectory` didn't break it).
 
 ```bash

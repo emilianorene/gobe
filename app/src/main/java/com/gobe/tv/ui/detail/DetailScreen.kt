@@ -28,7 +28,6 @@ import com.gobe.tv.GobeApp
 import com.gobe.tv.R
 import com.gobe.tv.data.art.BoxartUrlBuilder
 import com.gobe.tv.domain.Game
-import com.gobe.tv.domain.System
 import com.gobe.tv.emulation.EmulatorActivity
 import com.gobe.tv.emulation.EmulatorArgs
 import com.gobe.tv.emulation.SaveStateStore
@@ -44,7 +43,8 @@ fun DetailScreen(app: GobeApp, gameId: Long, onBack: () -> Unit) {
     val backFocus = remember { FocusRequester() }
 
     val g = game
-    val playable = g?.system == System.SNES
+    val playable = g != null &&
+        com.gobe.tv.emulation.CoreManager(context.applicationInfo.nativeLibraryDir).corePath(g.system) != null
     var hasState by remember { mutableStateOf(false) }
 
     // Refresh "save state exists" on load AND whenever we return from the emulator (ON_RESUME),
