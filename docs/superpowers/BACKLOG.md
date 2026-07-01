@@ -22,6 +22,30 @@ User feedback on the redesigned Home grid:
 Acceptance: Home shows more games per screen; Continue-playing doesn't dominate; each tile
 has the cover + "Name (Year)" caption; nothing cut off.
 
+## Gamepad navigation shortcuts + button legend (queued 2026-06-30)
+
+Make Home navigation faster/more intuitive with a physical gamepad (Pro Controller):
+
+- **Jump to Search with a shoulder button.** A dedicated gamepad button should focus the
+  search field directly, so you don't D-pad up to it every time. Suggested: **L1 (top-left
+  shoulder)** → Search (matches the user's "arriba a la izq" = top-left). Wire via
+  `KEYCODE_BUTTON_L1` in the Home key handler.
+- **Jump to Settings with a shoulder button.** Suggested counterpart: **R1 (top-right
+  shoulder)** → Settings. (Open to alternatives — e.g. Y face button — decide at impl.)
+- **On-screen button legend.** A persistent hint bar (bottom of Home, and adaptable per
+  screen) showing the control map so navigation is discoverable, e.g.:
+  `Ⓐ Select · Ⓑ Back · L1 Search · R1 Settings`. In-game the legend would read e.g.
+  `Select+Start Menu · Ⓑ/Back Pause`. Keep it subtle (low-opacity strip) so it doesn't
+  clutter the grid.
+
+Note on semantics: on Android TV gamepads, A = confirm/select and B = back/cancel by default
+(so "A salir / B seleccionar" from the message is inverted vs. the Android convention — the
+legend should reflect whatever the app actually binds; today Compose focus uses A=select,
+B=back). Confirm the real bindings when implementing and make the legend match them.
+
+Acceptance: L1 focuses search, R1 opens settings, and a readable button legend is visible
+on Home; bindings and legend text agree.
+
 ## Other noted follow-ups
 
 - Genre filter/browse on Home (genre data already in the index + Room).
