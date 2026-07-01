@@ -18,20 +18,26 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.tv.material3.LocalContentColor
 import androidx.tv.material3.MaterialTheme
+import com.gobe.tv.emulation.input.ControllerAssignments
 import com.gobe.tv.emulation.input.PadButton
 import com.gobe.tv.emulation.input.keyCodeToPadButton
 import com.gobe.tv.i18n.LocaleManager
-import com.gobe.tv.ui.controllers.ControllersScreen
+import com.gobe.tv.ui.controllers.ControllerDetailScreen
+import com.gobe.tv.ui.controllers.ControllerRow
+import com.gobe.tv.ui.controllers.ControllersListScreen
 import com.gobe.tv.ui.theme.GobeTheme
 
 /**
- * Detects connected gamepads (USB/Bluetooth) via InputManager and lets the user test their inputs:
- * pressing buttons/moving sticks highlights the on-screen panel. No persistence — port assignment
- * and remapping are separate sub-projects.
+ * Lists connected gamepads (USB/Bluetooth), lets the user assign each to a player port (P1–P4,
+ * persisted by device descriptor), and test its inputs. Selecting a controller opens its detail;
+ * the test panel there reacts only to that controller.
  */
 class ControllersActivity : ComponentActivity() {
 
-    private var devices by mutableStateOf<List<String>>(emptyList())
+    private var assignments by mutableStateOf(ControllerAssignments())
+    private var rows by mutableStateOf<List<ControllerRow>>(emptyList())
+    private var selected by mutableStateOf<String?>(null) // selected descriptor; null = list view
+
     private var keyButtons by mutableStateOf<Set<PadButton>>(emptySet())
     private var axisButtons by mutableStateOf<Set<PadButton>>(emptySet())
     private var leftStick by mutableStateOf(0f to 0f)
@@ -52,22 +58,34 @@ class ControllersActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        assignments = ControllerPrefs.load(this)
         refreshDevices()
         setContent {
             GobeTheme {
-                // tv-material3 Text reads LocalContentColor, which defaults to black outside a
-                // Surface. Provide the theme's light onBackground so all text is legible.
+                // tv-material3 Text defaults to black outside a Surface; provide onBackground.
                 Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
                     CompositionLocalProvider(
                         LocalContentColor provides MaterialTheme.colorScheme.onBackground,
                     ) {
-                        ControllersScreen(
-                            devices = devices,
-                            activeButtons = keyButtons + axisButtons,
-                            leftStick = leftStick,
-                            rightStick = rightStick,
-                            lastInput = lastInput,
-                        )
+                        val sel = selected
+                        val row = rows.firstOrNull { it.descriptor == sel }
+                        if (sel == null || row == null) {
+                            ControllersListScreen(rows = rows, onSelect = { selected = it })
+                        } else {
+                            ControllerDetailScreen(
+                                name = row.name,
+                                assignedPort = assignments.portFor(sel),
+                                activeButtons = keyButtons + axisButtons,
+                                leftStick = leftStick,
+                                rightStick = rightStick,
+                                lastInput = lastInput,
+                                onAssign = { port ->
+                                    assignments = assignments.assign(sel, port)
+                                    ControllerPrefs.save(this@ControllersActivity, assignments)
+                                    refreshDevices()
+                                },
+                            )
+                        }
                     }
                 }
             }
@@ -87,42 +105,59 @@ class ControllersActivity : ComponentActivity() {
 
     private fun isGamepad(dev: InputDevice?): Boolean {
         val s = dev?.sources ?: return false
-        // Require BOTH gamepad buttons AND joystick axes — this isolates real controllers from the
-        // TV remote (joystick-only) and virtual input devices (gamepad-only) seen on Android TV.
+        // Require BOTH gamepad buttons AND joystick axes — isolates real controllers from the TV
+        // remote (joystick-only) and virtual input devices (gamepad-only) seen on Android TV.
         return (s and InputDevice.SOURCE_GAMEPAD == InputDevice.SOURCE_GAMEPAD) &&
             (s and InputDevice.SOURCE_JOYSTICK == InputDevice.SOURCE_JOYSTICK)
     }
 
     private fun refreshDevices() {
-        val names = mutableListOf<String>()
+        val list = mutableListOf<ControllerRow>()
         for (id in InputDevice.getDeviceIds()) {
             val dev = InputDevice.getDevice(id) ?: continue
-            if (isGamepad(dev)) names.add(dev.name)
+            if (!isGamepad(dev)) continue
+            val desc = dev.descriptor
+            list.add(ControllerRow(desc, dev.name, assignments.portFor(desc)))
         }
-        devices = names
+        rows = list
+    }
+
+    /** Only the controller currently open in the detail view drives the test panel. */
+    private fun isSelectedDevice(deviceId: Int): Boolean =
+        selected != null && InputDevice.getDevice(deviceId)?.descriptor == selected
+
+    private fun backToList() {
+        selected = null
+        keyButtons = emptySet()
+        axisButtons = emptySet()
+        leftStick = 0f to 0f
+        rightStick = 0f to 0f
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-        if (event.keyCode == KeyEvent.KEYCODE_BACK) return super.dispatchKeyEvent(event) // leave
+        if (event.keyCode == KeyEvent.KEYCODE_BACK) {
+            if (event.action == KeyEvent.ACTION_UP && selected != null) { backToList(); return true }
+            return super.dispatchKeyEvent(event) // list view: leave the Activity
+        }
         val pad = keyCodeToPadButton(event.keyCode) ?: return super.dispatchKeyEvent(event)
+        if (!isSelectedDevice(event.deviceId)) return super.dispatchKeyEvent(event)
         if (event.action == KeyEvent.ACTION_DOWN) {
             keyButtons = keyButtons + pad
             lastInput = deviceName(event.deviceId) + " · " + pad.name
         } else if (event.action == KeyEvent.ACTION_UP) {
             keyButtons = keyButtons - pad
         }
-        // Let D-pad keys still move focus (so the screen stays navigable); consume the rest.
+        // Let D-pad keys still move focus; consume the rest.
         val isDpad = pad == PadButton.DPAD_UP || pad == PadButton.DPAD_DOWN ||
             pad == PadButton.DPAD_LEFT || pad == PadButton.DPAD_RIGHT
         return if (isDpad) super.dispatchKeyEvent(event) else true
     }
 
     override fun onGenericMotionEvent(event: MotionEvent): Boolean {
+        if (!isSelectedDevice(event.deviceId)) return super.onGenericMotionEvent(event)
         val dz = 0.2f
         fun ax(a: Int) = event.getAxisValue(a)
-        // D-pad as HAT axis (release -> 0 clears these).
         val hatX = ax(MotionEvent.AXIS_HAT_X); val hatY = ax(MotionEvent.AXIS_HAT_Y)
-        // Triggers may be axes rather than keycodes (fallback brake/gas).
         val lt = maxOf(ax(MotionEvent.AXIS_LTRIGGER), ax(MotionEvent.AXIS_BRAKE))
         val rt = maxOf(ax(MotionEvent.AXIS_RTRIGGER), ax(MotionEvent.AXIS_GAS))
         val set = mutableSetOf<PadButton>()

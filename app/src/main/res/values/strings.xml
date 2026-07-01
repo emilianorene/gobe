@@ -74,6 +74,9 @@
     <string name="controllers_last">Last input</string>
     <string name="controllers_sticks">Sticks</string>
     <string name="controllers_back">Back</string>
+    <string name="controllers_player">Player</string>
+    <string name="controllers_unassigned">Not assigned</string>
+    <string name="controllers_select_hint">Select a controller</string>
     <string name="lang_system">System</string>
     <string name="lang_es">Español</string>
     <string name="lang_en">English</string>

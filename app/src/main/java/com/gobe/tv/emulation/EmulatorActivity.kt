@@ -2,6 +2,7 @@ package com.gobe.tv.emulation
 
 import android.content.Context
 import android.os.Bundle
+import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.ViewGroup
@@ -18,6 +19,9 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
 import com.gobe.tv.GobeApp
 import com.gobe.tv.R
+import com.gobe.tv.controllers.ControllerPrefs
+import com.gobe.tv.emulation.input.ControllerAssignments
+import com.gobe.tv.emulation.input.portForDevice
 import com.gobe.tv.i18n.LocaleManager
 import com.gobe.tv.emulation.ui.PauseOverlay
 import com.gobe.tv.ui.theme.GobeTheme
@@ -47,6 +51,9 @@ class EmulatorActivity : ComponentActivity() {
     private var coreReadyHandled = false
     private var loadErrorHandled = false
 
+    // Player/port routing: which controller (by descriptor) drives which port. Loaded in onCreate.
+    private var assignments = ControllerAssignments()
+
     private val savesDir: File get() = File(filesDir, "saves").apply { mkdirs() }
     private val sramFile: File get() = File(savesDir, "${args.gameId}.srm")
 
@@ -65,6 +72,7 @@ class EmulatorActivity : ComponentActivity() {
         hideSystemBars()
 
         args = EmulatorArgs.fromIntent(intent)
+        assignments = ControllerPrefs.load(this)
         saveStore = SaveStateStore(filesDir)
         hasState = saveStore.hasState(args.gameId)
 
@@ -216,7 +224,10 @@ class EmulatorActivity : ComponentActivity() {
         super.onPause()
     }
 
-    // --- input forwarding (Player 1 = port 0) ---
+    // --- input forwarding (routed to each controller's assigned port; unassigned -> P1) ---
+
+    private fun portForInput(deviceId: Int): Int =
+        portForDevice(InputDevice.getDevice(deviceId)?.descriptor, assignments)
 
     private val heldKeys = HashSet<Int>()
 
@@ -244,34 +255,35 @@ class EmulatorActivity : ComponentActivity() {
             }
             // While paused, let the overlay handle nav; otherwise forward to the core as normal input.
             if (paused) return super.dispatchKeyEvent(event)
-            retroView?.sendKeyEvent(event.action, code, 0)
+            retroView?.sendKeyEvent(event.action, code, portForInput(event.deviceId))
             return true
         }
         if (paused) return super.dispatchKeyEvent(event) // overlay handles D-pad
-        retroView?.sendKeyEvent(event.action, code, 0)
+        retroView?.sendKeyEvent(event.action, code, portForInput(event.deviceId))
         return true
     }
 
     override fun onGenericMotionEvent(event: MotionEvent): Boolean {
         if (paused) return super.onGenericMotionEvent(event)
         val v = retroView ?: return super.onGenericMotionEvent(event)
+        val port = portForInput(event.deviceId)
         v.sendMotionEvent(
             GLRetroView.MOTION_SOURCE_DPAD,
             event.getAxisValue(MotionEvent.AXIS_HAT_X),
             event.getAxisValue(MotionEvent.AXIS_HAT_Y),
-            0,
+            port,
         )
         v.sendMotionEvent(
             GLRetroView.MOTION_SOURCE_ANALOG_LEFT,
             event.getAxisValue(MotionEvent.AXIS_X),
             event.getAxisValue(MotionEvent.AXIS_Y),
-            0,
+            port,
         )
         v.sendMotionEvent(
             GLRetroView.MOTION_SOURCE_ANALOG_RIGHT,
             event.getAxisValue(MotionEvent.AXIS_Z),
             event.getAxisValue(MotionEvent.AXIS_RZ),
-            0,
+            port,
         )
         return true
     }
