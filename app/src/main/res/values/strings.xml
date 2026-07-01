@@ -66,6 +66,14 @@
     <string name="settings_title">Settings</string>
     <string name="settings_language">Language</string>
     <string name="settings_folders">ROM folders</string>
+    <string name="settings_controllers">Controllers</string>
+    <string name="controllers_title">Controllers</string>
+    <string name="controllers_none">No controllers detected — connect a USB or Bluetooth gamepad.</string>
+    <string name="controllers_connected">Connected</string>
+    <string name="controllers_test">Press buttons to test</string>
+    <string name="controllers_last">Last input</string>
+    <string name="controllers_sticks">Sticks</string>
+    <string name="controllers_back">Back</string>
     <string name="lang_system">System</string>
     <string name="lang_es">Español</string>
     <string name="lang_en">English</string>

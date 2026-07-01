@@ -57,6 +57,14 @@
     <string name="settings_title">Ajustes</string>
     <string name="settings_language">Idioma</string>
     <string name="settings_folders">Carpetas de ROMs</string>
+    <string name="settings_controllers">Controles</string>
+    <string name="controllers_title">Controles</string>
+    <string name="controllers_none">No se detectan controles — conectá un gamepad USB o Bluetooth.</string>
+    <string name="controllers_connected">Conectados</string>
+    <string name="controllers_test">Apretá botones para probar</string>
+    <string name="controllers_last">Última entrada</string>
+    <string name="controllers_sticks">Sticks</string>
+    <string name="controllers_back">Volver</string>
     <string name="lang_system">Sistema</string>
     <string name="lang_es">Español</string>
     <string name="lang_en">English</string>
