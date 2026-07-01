@@ -38,6 +38,10 @@ import com.gobe.tv.domain.Game
 
 private val boxartUrlBuilder = BoxartUrlBuilder()
 
+/** Tile caption: game name, plus " (year)" when a real year is known. Pure for unit testing. */
+fun tileCaption(name: String, year: Int?): String =
+    if (year != null && year > 0) "$name ($year)" else name
+
 @OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
 fun GameTile(
