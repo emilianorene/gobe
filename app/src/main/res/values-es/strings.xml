@@ -78,4 +78,18 @@
     <string name="lang_system">Sistema</string>
     <string name="lang_es">Español</string>
     <string name="lang_en">English</string>
+
+    <string name="pause_change_disk">Cambiar disco (%1$d/%2$d)</string>
+    <string name="emu_disk_changed">Disco %1$d</string>
+    <string name="controls_hint_menu_fmt">Menú: %1$s · o Atrás</string>
+    <string name="hotkey_select_start">Select + Start</string>
+    <string name="hotkey_l1_r1">L1 + R1</string>
+    <string name="hotkey_l3_r3">L3 + R3</string>
+    <string name="settings_deadzone">Zona muerta analógica</string>
+    <string name="deadzone_off">Off</string>
+    <string name="deadzone_low">Baja</string>
+    <string name="deadzone_medium">Media</string>
+    <string name="deadzone_high">Alta</string>
+    <string name="settings_menu_hotkey">Atajo del menú</string>
+    <string name="controllers_unassign">Quitar</string>
 </resources>
