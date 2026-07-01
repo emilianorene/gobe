@@ -40,6 +40,9 @@ class EmulatorActivity : ComponentActivity() {
     // Compose state driving the overlay.
     private var paused by mutableStateOf(false)
     private var hasState by mutableStateOf(false)
+    // Shown briefly at launch to teach the menu combo; hidden after a delay AND permanently once
+    // the menu has been opened (so it never returns on resume).
+    private var showControlsHint by mutableStateOf(true)
 
     private var coreReadyHandled = false
     private var loadErrorHandled = false
@@ -106,6 +109,13 @@ class EmulatorActivity : ComponentActivity() {
                             onExit = ::exitToMenu,
                         )
                     }
+                    if (showControlsHint && !paused) {
+                        com.gobe.tv.emulation.ui.ControlsHint()
+                        androidx.compose.runtime.LaunchedEffect(Unit) {
+                            kotlinx.coroutines.delay(5000)
+                            showControlsHint = false
+                        }
+                    }
                 }
             }
         }
@@ -150,6 +160,7 @@ class EmulatorActivity : ComponentActivity() {
         retroView?.frameSpeed = 0
         retroView?.audioEnabled = false
         paused = true
+        showControlsHint = false // gone for good once the menu is discovered
     }
 
     private fun resume() {
