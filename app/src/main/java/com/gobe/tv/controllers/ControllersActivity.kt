@@ -18,6 +18,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.tv.material3.LocalContentColor
 import androidx.tv.material3.MaterialTheme
+import com.gobe.tv.emulation.input.ButtonSwaps
 import com.gobe.tv.emulation.input.ControllerAssignments
 import com.gobe.tv.emulation.input.PadButton
 import com.gobe.tv.emulation.input.keyCodeToPadButton
@@ -35,6 +36,7 @@ import com.gobe.tv.ui.theme.GobeTheme
 class ControllersActivity : ComponentActivity() {
 
     private var assignments by mutableStateOf(ControllerAssignments())
+    private var swaps by mutableStateOf<Map<String, ButtonSwaps>>(emptyMap())
     private var rows by mutableStateOf<List<ControllerRow>>(emptyList())
     private var selected by mutableStateOf<String?>(null) // selected descriptor; null = list view
 
@@ -59,6 +61,7 @@ class ControllersActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         assignments = ControllerPrefs.load(this)
+        swaps = ControllerPrefs.loadSwaps(this)
         refreshDevices()
         setContent {
             GobeTheme {
@@ -75,6 +78,7 @@ class ControllersActivity : ComponentActivity() {
                             ControllerDetailScreen(
                                 name = row.name,
                                 assignedPort = assignments.portFor(sel),
+                                swaps = swaps[sel] ?: ButtonSwaps(),
                                 activeButtons = keyButtons + axisButtons,
                                 leftStick = leftStick,
                                 rightStick = rightStick,
@@ -83,6 +87,16 @@ class ControllersActivity : ComponentActivity() {
                                     assignments = assignments.assign(sel, port)
                                     ControllerPrefs.save(this@ControllersActivity, assignments)
                                     refreshDevices()
+                                },
+                                onToggleSwapAB = {
+                                    val next = (swaps[sel] ?: ButtonSwaps()).let { it.copy(swapAB = !it.swapAB) }
+                                    ControllerPrefs.saveSwaps(this@ControllersActivity, sel, next)
+                                    swaps = swaps + (sel to next)
+                                },
+                                onToggleSwapXY = {
+                                    val next = (swaps[sel] ?: ButtonSwaps()).let { it.copy(swapXY = !it.swapXY) }
+                                    ControllerPrefs.saveSwaps(this@ControllersActivity, sel, next)
+                                    swaps = swaps + (sel to next)
                                 },
                             )
                         }
