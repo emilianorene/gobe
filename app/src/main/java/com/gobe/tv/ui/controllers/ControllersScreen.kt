@@ -63,6 +63,7 @@ fun ControllerDetailScreen(
     remap: com.gobe.tv.emulation.input.ButtonRemap,
     capturingTarget: Int?,
     onAssign: (Int) -> Unit,
+    onUnassign: () -> Unit,
     onToggleSwapAB: () -> Unit,
     onToggleSwapXY: () -> Unit,
     onCaptureStart: (Int) -> Unit,
@@ -87,6 +88,9 @@ fun ControllerDetailScreen(
                     onClick = { onAssign(p) },
                     modifier = if (p == 0) Modifier.focusRequester(playFocus) else Modifier,
                 ) { Text(if (selected) "● P${p + 1}" else "P${p + 1}") }
+            }
+            Button(onClick = onUnassign) {
+                Text((if (assignedPort == null) "● " else "") + stringResource(R.string.controllers_unassign))
             }
         }
         Spacer(Modifier.height(16.dp))
