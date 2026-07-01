@@ -13,6 +13,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.res.stringResource
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -142,7 +143,7 @@ class EmulatorActivity : ComponentActivity() {
                         )
                     }
                     if (showControlsHint && !paused) {
-                        com.gobe.tv.emulation.ui.ControlsHint(comboLabel = androidx.compose.ui.res.stringResource(menuHotkey.labelRes))
+                        com.gobe.tv.emulation.ui.ControlsHint(comboLabel = stringResource(menuHotkey.labelRes))
                         androidx.compose.runtime.LaunchedEffect(Unit) {
                             kotlinx.coroutines.delay(5000)
                             showControlsHint = false

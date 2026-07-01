@@ -3,6 +3,8 @@ package com.gobe.tv.ui.settings
 import android.app.Activity
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,7 +40,7 @@ fun SettingsScreen(onOpenFolders: () -> Unit, onBack: () -> Unit) {
         }
     }
 
-    Column(Modifier.fillMaxSize().padding(48.dp)) {
+    Column(Modifier.fillMaxSize().padding(48.dp).verticalScroll(rememberScrollState())) {
         Text(stringResource(R.string.settings_title), style = MaterialTheme.typography.headlineMedium)
         Spacer(Modifier.height(24.dp))
 
