@@ -18,6 +18,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.nativeKeyCode
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -42,8 +48,24 @@ fun HomeScreen(app: GobeApp, onOpenGame: (Long) -> Unit, onOpenSettings: () -> U
     val query by vm.query.collectAsState()
     val selectedSystem by vm.selectedSystem.collectAsState()
     val settingsFocus = remember { FocusRequester() }
+    val searchFocus = remember { FocusRequester() }
+    val keyboard = LocalSoftwareKeyboardController.current
 
-    Column(Modifier.fillMaxSize().padding(40.dp)) {
+    Column(
+        Modifier
+            .fillMaxSize()
+            .padding(40.dp)
+            .onPreviewKeyEvent { event ->
+                val action = keyToHomeAction(event.key.nativeKeyCode) ?: return@onPreviewKeyEvent false
+                if (event.type == KeyEventType.KeyDown) {
+                    when (action) {
+                        HomeKeyAction.Search -> { runCatching { searchFocus.requestFocus() }; keyboard?.show() }
+                        HomeKeyAction.Settings -> onOpenSettings()
+                    }
+                }
+                true // consume KeyDown (act) and KeyUp (no-op) for L1/R1
+            },
+    ) {
         // Top bar: logo + search field + Settings.
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Image(
@@ -55,6 +77,7 @@ fun HomeScreen(app: GobeApp, onOpenGame: (Long) -> Unit, onOpenSettings: () -> U
             SearchField(
                 value = query,
                 onValueChange = vm::setQuery,
+                focusRequester = searchFocus,
                 modifier = Modifier.weight(1f),
             )
             Spacer(Modifier.width(24.dp))
@@ -84,6 +107,8 @@ fun HomeScreen(app: GobeApp, onOpenGame: (Long) -> Unit, onOpenSettings: () -> U
 
         val hasContinue = state.continuePlaying.isNotEmpty()
 
+        // Content fills the remaining height (weighted) so the control legend stays pinned below it.
+        Box(Modifier.weight(1f).fillMaxWidth()) {
         when {
             state.loading -> Text(stringResource(R.string.home_scanning), style = MaterialTheme.typography.bodyLarge)
             state.games.isEmpty() && !hasContinue && query.isEmpty() && selectedSystem == null ->
@@ -131,11 +156,18 @@ fun HomeScreen(app: GobeApp, onOpenGame: (Long) -> Unit, onOpenSettings: () -> U
                 }
             }
         }
+        }
+        HomeControlLegend()
     }
 }
 
 @Composable
-private fun SearchField(value: String, onValueChange: (String) -> Unit, modifier: Modifier = Modifier) {
+private fun SearchField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    focusRequester: FocusRequester,
+    modifier: Modifier = Modifier,
+) {
     val textColor = MaterialTheme.colorScheme.onSurface
     Box(
         modifier
@@ -151,7 +183,7 @@ private fun SearchField(value: String, onValueChange: (String) -> Unit, modifier
             textStyle = TextStyle(color = textColor, fontSize = 16.sp),
             cursorBrush = androidx.compose.ui.graphics.SolidColor(textColor),
             keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(imeAction = ImeAction.Search),
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp).focusRequester(focusRequester),
             decorationBox = { inner ->
                 if (value.isEmpty()) {
                     Text(
@@ -171,6 +203,22 @@ private fun FilterChip(label: String, selected: Boolean, onClick: () -> Unit) {
     Button(onClick = onClick) {
         Text(if (selected) "● $label" else label)
     }
+}
+
+/** Subtle, always-visible control legend pinned at the bottom of Home. Labels match the real
+ *  bindings (A = select, B = back) plus the L1/R1 shortcuts. */
+@Composable
+private fun HomeControlLegend() {
+    val select = stringResource(R.string.legend_select)
+    val back = stringResource(R.string.legend_back)
+    val search = stringResource(R.string.legend_search)
+    val settings = stringResource(R.string.legend_settings)
+    Text(
+        "Ⓐ $select  ·  Ⓑ $back  ·  L1 $search  ·  R1 $settings",
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+        modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+    )
 }
 
 @Composable
