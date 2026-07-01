@@ -15,6 +15,8 @@ import androidx.tv.material3.Button
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.gobe.tv.R
+import com.gobe.tv.emulation.GameSettings
+import com.gobe.tv.emulation.input.DeadzoneLevel
 import com.gobe.tv.i18n.AppLanguage
 import com.gobe.tv.i18n.LocaleManager
 
@@ -25,6 +27,7 @@ fun SettingsScreen(onOpenFolders: () -> Unit, onBack: () -> Unit) {
     val focus = remember { FocusRequester() }
     LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
     val current = remember { LocaleManager.getLanguage(context) }
+    var deadzone by remember { mutableStateOf(GameSettings.loadDeadzone(context)) }
 
     fun choose(language: AppLanguage) {
         if (language != LocaleManager.getLanguage(context)) {
@@ -57,5 +60,22 @@ fun SettingsScreen(onOpenFolders: () -> Unit, onBack: () -> Unit) {
         Button(onClick = {
             context.startActivity(android.content.Intent(context, com.gobe.tv.controllers.ControllersActivity::class.java))
         }) { Text(stringResource(R.string.settings_controllers)) }
+
+        Spacer(Modifier.height(32.dp))
+        Text(stringResource(R.string.settings_deadzone), style = MaterialTheme.typography.titleLarge)
+        Spacer(Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            val levels = listOf(
+                DeadzoneLevel.OFF to R.string.deadzone_off,
+                DeadzoneLevel.LOW to R.string.deadzone_low,
+                DeadzoneLevel.MEDIUM to R.string.deadzone_medium,
+                DeadzoneLevel.HIGH to R.string.deadzone_high,
+            )
+            levels.forEach { (level, labelRes) ->
+                Button(onClick = { GameSettings.saveDeadzone(context, level); deadzone = level }) {
+                    Text((if (deadzone == level) "● " else "") + stringResource(labelRes))
+                }
+            }
+        }
     }
 }

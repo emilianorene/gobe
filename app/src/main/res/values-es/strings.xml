@@ -42,7 +42,6 @@
     <string name="pause_load_none">Cargar estado (sin guardado)</string>
     <string name="pause_exit">Salir al menú</string>
     <string name="pause_exit_to_gobe">Salir a Gobe</string>
-    <string name="controls_hint_menu">Menú: Select + Start · o Atrás</string>
     <string name="pause_legend_select">Elegir</string>
     <string name="pause_legend_close">Cerrar</string>
 

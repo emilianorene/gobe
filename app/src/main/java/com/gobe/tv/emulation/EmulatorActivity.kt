@@ -20,10 +20,15 @@ import androidx.lifecycle.lifecycleScope
 import com.gobe.tv.GobeApp
 import com.gobe.tv.R
 import com.gobe.tv.controllers.ControllerPrefs
+import com.gobe.tv.emulation.GameSettings
 import com.gobe.tv.emulation.input.ButtonRemap
 import com.gobe.tv.emulation.input.ButtonSwaps
 import com.gobe.tv.emulation.input.ControllerAssignments
+import com.gobe.tv.emulation.input.DeadzoneLevel
+import com.gobe.tv.emulation.input.MenuHotkey
+import com.gobe.tv.emulation.input.applyDeadzone
 import com.gobe.tv.emulation.input.applyMapping
+import com.gobe.tv.emulation.input.isHotkeyCombo
 import com.gobe.tv.emulation.input.nextDisk
 import com.gobe.tv.emulation.input.portForDevice
 import com.gobe.tv.i18n.LocaleManager
@@ -63,6 +68,8 @@ class EmulatorActivity : ComponentActivity() {
     private var swapsByDescriptor: Map<String, ButtonSwaps> = emptyMap()
     // Per-controller custom button remaps, read once at launch.
     private var remapsByDescriptor: Map<String, ButtonRemap> = emptyMap()
+    private var deadzone = DeadzoneLevel.LOW
+    private var menuHotkey = MenuHotkey.SELECT_START
 
     private val savesDir: File get() = File(filesDir, "saves").apply { mkdirs() }
     private val sramFile: File get() = File(savesDir, "${args.gameId}.srm")
@@ -85,6 +92,8 @@ class EmulatorActivity : ComponentActivity() {
         assignments = ControllerPrefs.load(this)
         swapsByDescriptor = ControllerPrefs.loadSwaps(this)
         remapsByDescriptor = ControllerPrefs.loadRemaps(this)
+        deadzone = GameSettings.loadDeadzone(this)
+        menuHotkey = GameSettings.loadMenuHotkey(this)
         saveStore = SaveStateStore(filesDir)
         hasState = saveStore.hasState(args.gameId)
 
@@ -133,7 +142,7 @@ class EmulatorActivity : ComponentActivity() {
                         )
                     }
                     if (showControlsHint && !paused) {
-                        com.gobe.tv.emulation.ui.ControlsHint()
+                        com.gobe.tv.emulation.ui.ControlsHint(comboLabel = androidx.compose.ui.res.stringResource(menuHotkey.labelRes))
                         androidx.compose.runtime.LaunchedEffect(Unit) {
                             kotlinx.coroutines.delay(5000)
                             showControlsHint = false
@@ -308,16 +317,17 @@ class EmulatorActivity : ComponentActivity() {
             event.getAxisValue(MotionEvent.AXIS_HAT_Y),
             port,
         )
+        val t = deadzone.threshold
         v.sendMotionEvent(
             GLRetroView.MOTION_SOURCE_ANALOG_LEFT,
-            event.getAxisValue(MotionEvent.AXIS_X),
-            event.getAxisValue(MotionEvent.AXIS_Y),
+            applyDeadzone(event.getAxisValue(MotionEvent.AXIS_X), t),
+            applyDeadzone(event.getAxisValue(MotionEvent.AXIS_Y), t),
             port,
         )
         v.sendMotionEvent(
             GLRetroView.MOTION_SOURCE_ANALOG_RIGHT,
-            event.getAxisValue(MotionEvent.AXIS_Z),
-            event.getAxisValue(MotionEvent.AXIS_RZ),
+            applyDeadzone(event.getAxisValue(MotionEvent.AXIS_Z), t),
+            applyDeadzone(event.getAxisValue(MotionEvent.AXIS_RZ), t),
             port,
         )
         return true
