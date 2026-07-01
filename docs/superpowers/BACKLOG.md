@@ -22,7 +22,12 @@ User feedback on the redesigned Home grid:
 Acceptance: Home shows more games per screen; Continue-playing doesn't dominate; each tile
 has the cover + "Name (Year)" caption; nothing cut off.
 
-## Gamepad navigation shortcuts + button legend (queued 2026-06-30)
+## Gamepad navigation shortcuts + button legend (DONE 2026-06-30 — feat/gamepad-nav)
+
+> Shipped: L1→Search, R1→Settings, and a bottom control legend
+> (`Ⓐ Select · Ⓑ Back · L1 Search · R1 Settings`). See
+> `plans/2026-06-30-gobe-gamepad-nav-RESULTS.md`. Original notes below.
+
 
 Make Home navigation faster/more intuitive with a physical gamepad (Pro Controller):
 
