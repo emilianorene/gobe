@@ -14,8 +14,10 @@ class CoreManagerTest {
     @Test fun arcadeResolvesToBundledCore() =
         assertEquals("/data/app/x/lib/arm/libfbneo_libretro_android.so", cm.corePath(System.ARCADE))
 
+    @Test fun nesResolvesToBundledCore() =
+        assertEquals("/data/app/x/lib/arm/libfceumm_libretro_android.so", cm.corePath(System.NES))
+
     @Test fun unsupportedSystemsAreNullForNow() {
-        assertNull(cm.corePath(System.NES))
         assertNull(cm.corePath(System.N64))
     }
 }
