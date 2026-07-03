@@ -32,9 +32,12 @@ interface GameDao {
     @Query("SELECT DISTINCT genre FROM games WHERE genre IS NOT NULL AND genre != '' ORDER BY genre COLLATE NOCASE ASC")
     fun distinctGenres(): Flow<List<String>>
 
-    @Query("SELECT * FROM games WHERE displayName LIKE '%' || :q || '%' AND (:system IS NULL OR system = :system) AND (:genre IS NULL OR genre = :genre) ORDER BY displayName COLLATE NOCASE ASC")
-    fun searchGames(q: String, system: String?, genre: String?): Flow<List<GameEntity>>
+    @Query("SELECT * FROM games WHERE displayName LIKE '%' || :q || '%' AND (:system IS NULL OR system = :system) AND (:genre IS NULL OR genre = :genre) AND (:recommendedOnly = 0 OR recommended = 1) ORDER BY recommended DESC, displayName COLLATE NOCASE ASC")
+    fun searchGames(q: String, system: String?, genre: String?, recommendedOnly: Int): Flow<List<GameEntity>>
 
     @Query("UPDATE games SET players = :players, boxartName = :boxartName, genre = :genre, year = :year WHERE id = :id")
     suspend fun updateMeta(id: Long, players: Int?, boxartName: String?, genre: String?, year: Int?)
+
+    @Query("UPDATE games SET recommended = :recommended WHERE id = :id")
+    suspend fun updateRecommended(id: Long, recommended: Boolean)
 }
