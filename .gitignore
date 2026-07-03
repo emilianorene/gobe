@@ -13,3 +13,7 @@ captures/
 # Signing (keep private, back up separately)
 gobe-release.keystore
 keystore.properties
+
+# IGDB build credentials (maintainer-side; never commit)
+.igdb.env
+tools/build-metadata-index/.igdb.env
