@@ -12,6 +12,7 @@ data class GameMeta(
 
 class MetadataIndex(private val map: Map<String, GameMeta>) {
     operator fun get(normalized: String): GameMeta? = map[normalized]
+    fun isEmpty(): Boolean = map.isEmpty()
     companion object {
         fun parse(json: String): MetadataIndex {
             val obj = JSONObject(json)

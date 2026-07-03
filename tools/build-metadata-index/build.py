@@ -206,7 +206,7 @@ def igdb_recommended(tag: str, client_id: str, token: str) -> set:
     offset = 0
     while True:
         q = (f"fields name,total_rating,total_rating_count; "
-             f"where platforms = ({platform}) & total_rating != null & total_rating_count >= 3; "
+             f"where platforms = ({platform}) & total_rating != null & total_rating_count >= 5; "
              f"sort total_rating desc; limit 500; offset {offset};")
         req = urllib.request.Request(
             IGDB_GAMES_URL, data=q.encode(),

@@ -83,7 +83,10 @@ class LibraryRepository(
         // filter above only re-matches never-matched rows). Cheap in-memory match; writes on change.
         if (m != null && provider != null) {
             val recoUpdates = recommendedBackfillUpdates(gameDao.getAll()) { e ->
-                m.match(e.displayName, provider(e.system))?.recommended ?: false
+                val idx = provider(e.system)
+                // An empty index means the bundled asset failed to load — don't clear existing flags
+                // on a transient failure (unlike a real "no longer recommended" match).
+                if (idx.isEmpty()) e.recommended else m.match(e.displayName, idx)?.recommended ?: false
             }
             if (recoUpdates.isNotEmpty()) {
                 runInTransaction {
