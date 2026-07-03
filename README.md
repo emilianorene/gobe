@@ -7,9 +7,9 @@
 Browse your retro library with box art and play SNES, Arcade and NES/Famicom Disk System games
 from your couch — built natively in Kotlin + Jetpack Compose for TV.
 
-![version](https://img.shields.io/badge/version-0.1.0--beta-blue)
+![version](https://img.shields.io/badge/version-0.2.0--beta-blue)
 ![platform](https://img.shields.io/badge/platform-Android%20TV-green)
-![minSdk](https://img.shields.io/badge/minSdk-30-orange)
+![minSdk](https://img.shields.io/badge/minSdk-24-orange)
 ![license](https://img.shields.io/badge/license-GPLv3-lightgrey)
 
 </div>
@@ -48,10 +48,67 @@ from your couch — built natively in Kotlin + Jetpack Compose for TV.
 
 ## Install
 
-1. Download the latest `app-release.apk` from the [**Releases**](../../releases) page.
-2. Sideload it onto your Android TV device (e.g. via [Downloader], a USB drive, or
-   `adb install app-release.apk`).
-3. On first launch, grant the **all-files access** permission so Gobe can find your ROMs.
+Gobe isn't on the Play Store, so you install it by **sideloading** the APK. Pick whichever method
+matches your TV — the whole thing takes about 5 minutes.
+
+### Step 1 — Allow installs from unknown sources
+
+Android TV blocks sideloaded apps until you allow the app that will do the installing:
+
+- **Google TV / Android TV:** **Settings → System → About**, then click **Android version /
+  build** a few times to confirm it's Android 7+ (see [Requirements](#requirements)). Then go to
+  **Settings → Apps → Security & restrictions → Unknown sources** and turn **ON** the app you'll
+  use to install (e.g. **Downloader**, **Files**, or **Drive**).
+- **Fire TV:** **Settings → My Fire TV → Developer options → Install unknown apps**, then enable
+  the app you'll install from (e.g. **Downloader**).
+
+### Step 2 — Get the APK onto your TV
+
+Choose one:
+
+- **Downloader app (easiest, no computer):** install [Downloader] from your TV's app store, open
+  it, and enter the direct link to the latest `app-release.apk` from the
+  [**Releases**](../../releases) page. It will download and offer to install.
+- **USB drive:** on a computer, download `app-release.apk` from the
+  [**Releases**](../../releases) page and copy it to a USB stick. Plug it into the TV, open a file
+  manager (e.g. **X-plore** or **Files**), browse to the APK and open it.
+- **ADB (for developers):** with USB debugging on, run
+  `adb install app-release.apk` from your computer.
+
+### Step 3 — Install and open
+
+1. When the installer opens, choose **Install**. If **Google Play Protect** warns you the app is
+   from an unknown developer, tap **"Install anyway"** (see troubleshooting below) — this is
+   expected for sideloaded apps.
+2. Open **Gobe** from your TV's apps row.
+3. On first launch Gobe asks for the **all-files access** permission — grant it so Gobe can scan
+   your ROM folders. (You can also grant it later in **Android Settings → Apps → Gobe →
+   Permissions**.)
+
+> **"There was a problem parsing the package"?** Your device is below the minimum Android
+> version, or the download is incomplete. Gobe needs **Android 7.0 (API 24) or newer** — see
+> [Requirements](#requirements) below. Re-download if the transfer was interrupted.
+>
+> **Google Play Protect says "app blocked to protect your device"?** This is the normal warning
+> for any sideloaded app from a developer Play hasn't seen before — it is **not** an error. Tap
+> **"Install anyway"** (the text link above the "Got it" button) to continue.
+
+## Requirements
+
+- **Android TV 7.0 (API 24) or newer** — Google TV, Fire TV (FireOS 6+), or a generic Android TV box.
+- **CPU**: ARM (32-bit `armeabi-v7a` / 64-bit `arm64-v8a`) or x86 / x86_64 — all bundled in the APK.
+- ~150 MB free for the app, plus space for your ROMs.
+- A gamepad or Bluetooth controller (a TV remote works for browsing, not for gameplay).
+- **Phones/tablets are not supported** — Gobe is a TV (leanback) app.
+
+| ✅ Compatible | ❌ Not supported |
+|---|---|
+| Nvidia Shield TV | Phones / tablets (TV-only app) |
+| Chromecast with Google TV, ONN | Android TV older than 7.0 |
+| Fire TV Stick / Cube (FireOS 6+) | |
+| Xiaomi Mi Box / TV Stick | |
+| TCL / Hisense / Sony Google TV | |
+| Generic Android TV boxes (Android 7+) | |
 
 > **Updating from an earlier build:** the beta APK is signed with Gobe's release key. If you had a
 > development (debug) build installed, uninstall it first — Android won't update across different
@@ -59,16 +116,56 @@ from your couch — built natively in Kotlin + Jetpack Compose for TV.
 
 [Downloader]: https://www.aftvnews.com/downloader/
 
-## Setup: your ROMs & BIOS
+## Setup: adding your games
 
-Gobe ships **no games or BIOS**. Put your own legally-obtained files on the device:
+Gobe ships **no games or BIOS** — you supply your own, legally-obtained files. Here's the full flow.
 
-- **ROMs**: default folder `Download/ROMs/` (add more folders in **Settings → ROM folders**). Gobe
-  recognizes: SNES (`.smc`/`.sfc`), Arcade (`.zip`), NES/FDS (`.nes`/`.fds`).
-- **BIOS** (only for Famicom Disk System): put **`disksys.rom`** in
-  `Download/ROMs/system/`. Without it, `.fds` games won't boot.
-- **Arcade**: your `.zip` romsets must match the FBNeo set; missing files show an on-screen "FBNeo
-  Error" naming the file to add.
+### Step 1 — Create the folder layout on your TV
+
+By default Gobe looks in **`Download/ROMs/`** on the device's internal storage. Create this
+structure (you can add more folders later in **Settings → ROM folders**):
+
+```
+Download/
+└── ROMs/
+    ├── (your game files go here, e.g. mario.sfc, game.zip, zelda.fds)
+    └── system/
+        └── disksys.rom   ← BIOS, only needed for Famicom Disk System games
+```
+
+### Step 2 — Copy your game files onto the TV
+
+Choose whichever is convenient:
+
+- **USB drive:** copy your ROMs into `ROMs/` on a USB stick, plug it into the TV, and use a file
+  manager (e.g. **X-plore**, **Files**) to move them into `Download/ROMs/` on internal storage.
+- **Network / cloud:** put the files on a shared folder, Google Drive, or an SMB share and pull
+  them down with a file manager on the TV.
+- **ADB (developers):** `adb push mygame.sfc /sdcard/Download/ROMs/`
+
+**Supported formats:**
+
+| System | File types | Notes |
+|---|---|---|
+| SNES | `.smc`, `.sfc` | — |
+| NES / Famicom Disk System | `.nes`, `.fds` | `.fds` needs the BIOS (Step 3) |
+| Arcade (FBNeo) | `.zip` | romset must match the FBNeo set |
+
+### Step 3 — (FDS only) add the BIOS
+
+Famicom Disk System `.fds` games need the **`disksys.rom`** BIOS. Place it at
+**`Download/ROMs/system/disksys.rom`**. Without it, `.fds` games won't boot.
+
+### Step 4 — Scan and play
+
+Open Gobe. It scans your folders automatically and builds a **box-art grid** (cover art is
+downloaded from the [libretro-thumbnails] project — connect the TV to the internet the first time
+so art can load). Filter by **system** or **genre**, pick a game, and press to play.
+
+> **Arcade note:** if a `.zip` is missing a file the FBNeo core expects, Gobe shows an on-screen
+> "FBNeo Error" naming exactly which file to add to the `.zip`.
+
+[libretro-thumbnails]: https://github.com/libretro-thumbnails
 
 ## Controllers
 
@@ -97,21 +194,22 @@ produced unsigned. The Libretro cores are bundled as `armeabi-v7a` `.so` files u
 ## Tech stack
 
 Kotlin · Jetpack Compose for **TV** (`androidx.tv:tv-material3`) · Room · Coil · Kotlin Coroutines ·
-[LibretroDroid] 0.14.0 · minSdk 30 / targetSdk 34.
+[LibretroDroid] 0.14.0 · minSdk 24 / targetSdk 34.
 
 [LibretroDroid]: https://github.com/Swordfish90/LibretroDroid
 
 ## Roadmap
 
-See [ROADMAP.md](ROADMAP.md). Next up (v0.2): unassign-controller, analog deadzone, configurable
-menu hotkey, FDS multi-disk swap.
+See [ROADMAP.md](ROADMAP.md). Next up (v0.3): favorites/recently-added rows, richer metadata and
+art matching, manual art override, and sort options.
 
 ## Known limitations
 
 - Tested on a single device (ONN Google TV 4K Plus, 32-bit `armeabi-v7a`).
 - **USB controllers**: not detected on the ONN (hardware — its USB-C is power-only). Use Bluetooth.
 - **Rumble** is not available on this hardware.
-- **FDS multi-disk** games needing a manual side flip have no disk-swap UI yet.
+- **FDS multi-disk** swap has a known bug — the disk-swap button doesn't appear yet (under
+  investigation). Single-disk `.fds` games are unaffected.
 - A couple of arcade titles need a specific file inside their `.zip` (FBNeo names it on screen).
 
 ## Legal

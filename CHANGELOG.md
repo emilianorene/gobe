@@ -11,6 +11,40 @@ Each released `app-release.apk` is attached to its tag on the
 
 _Nothing yet._
 
+## [0.2.0-beta] — 2026-07-02
+
+Controller & input polish, and a big compatibility fix so Gobe installs on far more devices.
+
+### Added
+
+- **Unassign a controller** — clear a gamepad's player slot directly from the controllers screen.
+- **Analog stick deadzone** setting to stop drift on worn sticks.
+- **Configurable menu hotkey** — choose **Select + Start**, **L1 + R1**, or **L3 + R3** to open
+  the in-game menu.
+- **Dynamic on-screen controls hint** reflecting the chosen hotkey.
+- **Scrollable Settings screen** so all options are reachable on any TV resolution.
+- **FDS multi-disk swap** UI (see known limitation below).
+
+### Changed
+
+- **Lowered `minSdk` from 30 (Android 11) to 24 (Android 7.0)** so Gobe installs on the vast
+  majority of Android TV / Google TV / Fire TV devices. `minSdk 30` caused a **"problem parsing
+  the package"** error on any device running Android 10 or older.
+
+### Docs
+
+- README: much more detailed **step-by-step install** (unknown sources → get the APK → install)
+  and **game setup** (folder layout → copy files → FDS BIOS → scan) instructions for Android TV.
+- README: added a **Requirements** section with a compatible-device table, plus troubleshooting
+  for the package-parse error and the Google Play Protect sideload warning.
+
+### Known limitations
+
+- **FDS disk-swap button doesn't appear** yet — the multi-disk swap UI shipped but the button to
+  flip/insert the next disk is not showing (under investigation). Single-disk `.fds` games work.
+- Carried over from 0.1.0-beta: USB controllers not detected on the ONN (use Bluetooth), no
+  rumble on that hardware.
+
 ## [0.1.0-beta] — 2026-07-01
 
 First public beta. A working Android TV emulator frontend tested on an ONN Google TV 4K Plus.
@@ -46,5 +80,6 @@ First public beta. A working Android TV emulator frontend tested on an ONN Googl
 - No rumble on this hardware.
 - No disk-swap UI yet for multi-disk FDS games.
 
-[Unreleased]: ../../compare/v0.1.0-beta...HEAD
+[Unreleased]: ../../compare/v0.2.0-beta...HEAD
+[0.2.0-beta]: ../../compare/v0.1.0-beta...v0.2.0-beta
 [0.1.0-beta]: ../../releases/tag/v0.1.0-beta

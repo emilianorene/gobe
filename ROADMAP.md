@@ -3,21 +3,23 @@
 A living plan for where Gobe is headed. Dates are directional, not commitments — this is a personal
 project. Items graduate to the [CHANGELOG](CHANGELOG.md) as they ship.
 
-## ✅ v0.1.0-beta — _current_
+## ✅ v0.2.0-beta — _current_
+
+Controller & input polish, plus much wider device support.
+
+- **Unassign a controller** (clear its player slot) directly from the controllers screen.
+- **Analog stick deadzone** setting to stop drift on worn sticks.
+- **Configurable menu hotkey** (Select + Start / L1 + R1 / L3 + R3).
+- **Wider install support**: `minSdk` lowered 30 → 24, so Gobe installs on Android 7.0+ devices
+  (Fire TV, Mi Box, most TV boxes) instead of only Android 11+.
+- ⚠️ **FDS multi-disk swap** UI shipped but has a **known bug** — the disk-swap button doesn't
+  appear yet (under investigation). Single-disk `.fds` games are unaffected.
+
+## ✅ v0.1.0-beta
 
 The first public, playable build. Emulation (SNES / Arcade / NES-FDS), a box-art library with
 search + genre/system filters, save states, and full controller configuration (player assignment,
 A/B–X/Y swaps, capture remapping). Signed releases with in-place updates.
-
-## 🎯 v0.2 — Controller & input polish
-
-Close the gaps found while using the beta.
-
-- **Unassign a controller** (clear its player slot) directly from the controllers screen.
-- **Analog stick deadzone** setting to stop drift on worn sticks.
-- **Configurable menu hotkey** (currently Select + Start / Back).
-- **FDS multi-disk swap** UI — flip/insert the next disk without leaving the game.
-- Better "no controller / connect Bluetooth" guidance on the controllers screen.
 
 ## 🚀 v0.3 — Library & content
 
