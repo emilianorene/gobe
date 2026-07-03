@@ -11,6 +11,8 @@
     <string name="legend_search">Buscar</string>
     <string name="legend_settings">Ajustes</string>
     <string name="filter_all">Todos</string>
+    <string name="game_recommended">Recomendado</string>
+    <string name="filter_recommended">Recomendados</string>
 
     <string name="detail_loading">Cargando…</string>
     <string name="detail_play">Jugar</string>

@@ -118,6 +118,14 @@ fun DetailScreen(app: GobeApp, gameId: Long, onBack: () -> Unit) {
                         color = MaterialTheme.colorScheme.onSurface,
                     )
                     Spacer(Modifier.height(4.dp))
+                    if (g.recommended) {
+                        Text(
+                            "★ " + stringResource(R.string.game_recommended),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = androidx.compose.ui.graphics.Color(0xFFFFD54F),
+                        )
+                        Spacer(Modifier.height(4.dp))
+                    }
                     Text(
                         stringResource(R.string.detail_size_kb, (g.sizeBytes / 1024).toInt()) +
                             if (hasState) " · " + stringResource(R.string.detail_save_state_present) else "",
