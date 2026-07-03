@@ -19,4 +19,5 @@ data class GameEntity(
     val boxartName: String? = null,
     val genre: String? = null,
     val year: Int? = null,
+    val recommended: Boolean = false,
 )
