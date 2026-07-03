@@ -55,11 +55,23 @@ person's library automatically — the tagging is by game identity, not tied to 
   tool's header. If creds are absent, the stage is skipped and the index builds without the flag
   (graceful, so the build never hard-fails on a fresh clone).
 
-### 3.3 Matching / tagging (unchanged mechanism)
-- `GameMatcher.match` already returns a `GameMeta` for a normalized display name; the scanner copies
-  `meta.recommended` into the `GameEntity`. Any library, any user — a game is tagged iff its cleaned
-  name matches a recommended entry in the bundled index. Homebrew/hacks not in the dataset stay
-  untagged (correct — they aren't "essential").
+### 3.3 Matching / tagging (in `LibraryRepository.rescan()`)
+- Tagging happens in `LibraryRepository.rescan()` (NOT a "scanner" — there is no scanner meta-copy).
+  Today it matches metadata for **new** games only, via a candidate filter
+  `gameDao.getAll().filter { it.players == null && it.boxartName == null }`, builds a private
+  `MetaUpdate`, and writes it with `GameDao.updateMeta(id, players, boxartName, genre, year)`.
+- **Add `recommended` to the write path:** extend `MetaUpdate` + `GameDao.updateMeta` to carry
+  `recommended`, and set it from `meta.recommended` for new games.
+- **Backfill for existing libraries (IMPORTANT):** the candidate filter above skips any game that
+  already matched boxart/players on a prior scan, so those games would NEVER get `recommended` set
+  (the flag would stay `false` on every pre-existing install). Fix: after the existing candidate
+  pass, run a **recommended-refresh pass over ALL games** — for each game, look up
+  `matcher.match(displayName, index(system))?.recommended ?: false` (a cheap in-memory normalize +
+  map lookup) and, only when it differs from the stored value, write it via a new
+  `GameDao.updateRecommended(id, recommended)`. This is idempotent, O(n) lookups with DB writes only
+  on change, and backfills both fresh scans and already-scanned libraries on the next rescan.
+- Any library, any user — a game is tagged iff its cleaned name matches a recommended entry in the
+  bundled index. Homebrew/hacks not in the dataset stay untagged (correct — they aren't "essential").
 
 ### 3.4 UI
 - **Badge on the tile**: a small "★ Recommended" mark in a corner of the cover (only when
@@ -72,11 +84,22 @@ person's library automatically — the tagging is by game identity, not tied to 
   so the good stuff floats up even with the filter off.
 
 ### 3.5 Persistence / query
-- Extend the games DAO: add `recommended` to the entity + a `recommendedOnly` argument to the
-  library query (`searchGames(query, system, genre, recommendedOnly)`), and `ORDER BY recommended
-  DESC, <existing order>`. Room schema version bump + migration adding the `recommended` column
-  (default 0); since the games table is a rebuildable scan cache, a destructive fallback that
-  re-scans is acceptable if simpler.
+- **Entity + migration:** add `recommended: Boolean = false` to `GameEntity`. This codebase uses
+  **real Room migrations only** — `GobeDatabase` is at `version = 3` with `MIGRATION_1_2` /
+  `MIGRATION_2_3`, registered via `GobeApp`'s `.addMigrations(...)` (there is **no**
+  `fallbackToDestructiveMigration`). So: bump `version = 3 → 4`, add
+  `MIGRATION_3_4` running `ALTER TABLE games ADD COLUMN recommended INTEGER NOT NULL DEFAULT 0`
+  (mirroring `MIGRATION_2_3`), and register it in `addMigrations(...)`. Do **not** introduce a
+  destructive fallback.
+- **Query:** the current DAO query is
+  `searchGames(q, system, genre)` = `... WHERE displayName LIKE '%'||:q||'%' AND (:system IS NULL OR
+  system = :system) AND (:genre IS NULL OR genre = :genre) ORDER BY displayName COLLATE NOCASE ASC`.
+  Add a `recommendedOnly: Int` arg (0/1, matching the nullable-filter idiom) →
+  `AND (:recommendedOnly = 0 OR recommended = 1)` and change the ordering to
+  `ORDER BY recommended DESC, displayName COLLATE NOCASE ASC`. Thread the new arg through
+  `LibraryRepository.searchGames(query, system, genre, recommendedOnly)` and the `HomeViewModel`
+  `combine` (add a 4th flow for the filter state).
+- Add `GameDao.updateRecommended(id, recommended)` (see §3.3) and extend `updateMeta` with the flag.
 
 ## 4. Out of scope (deferred)
 
@@ -94,8 +117,9 @@ person's library automatically — the tagging is by game identity, not tied to 
 - **Build tool (Python):** a pure `select_recommended(entries) -> set[key]` function implementing
   §3.2 with an inline assert-based self-test; an IGDB fetch function; wiring to merge the flag into
   the existing output.
-- **App wiring:** `GameEntity` + DAO + scanner copy + `HomeViewModel` filter state + `HomeScreen`
-  chip + `GameTile` badge + `DetailScreen` line + strings (EN/ES).
+- **App wiring:** `GameEntity` + `MIGRATION_3_4` + DAO (`updateMeta`+`updateRecommended`+
+  `searchGames`) + `LibraryRepository.rescan()` tagging & backfill + `HomeViewModel` filter state +
+  `HomeScreen` chip + `GameTile` badge + `DetailScreen` line + strings (EN/ES).
 
 ## 6. Data flow
 
@@ -114,16 +138,19 @@ person's library automatically — the tagging is by game identity, not tied to 
   games are tagged).
 - Name mismatch (IGDB title ≠ ROM cleaned name) → that game just isn't tagged; no crash. The tool
   logs unmatched high-rated titles so coverage can be improved.
-- Old DB without the column → migration adds it defaulting to false; a re-scan repopulates from the
-  index.
+- Old DB without the column → `MIGRATION_3_4` adds it defaulting to false; the **recommended-refresh
+  pass** in `rescan()` (§3.3) then backfills the flag for the already-scanned library on the next
+  scan (the existing null-meta candidate filter alone would NOT — see §3.3).
 - Filter on with zero recommended games owned → the grid shows the existing "no games" empty state.
 
 ## 8. Testing
 
 - **Unit (JVM):** `MetadataIndex.parse` reads `recommended` (true when present, false when absent);
-  `GameMatcher` propagates `recommended`; the DAO returns only recommended when `recommendedOnly` is
-  set and orders recommended-first (Room instrumented test or a query-logic test consistent with the
-  existing DAO tests).
+  `GameMatcher` propagates `recommended`; the DAO returns only recommended when `recommendedOnly=1`
+  and orders recommended-first (Room instrumented test or a query-logic test consistent with the
+  existing DAO tests). Also cover the **backfill**: a pre-existing row (already has boxart/players,
+  `recommended=false`) whose name matches a recommended index entry gets `recommended=true` after a
+  rescan (guards against regressing the §3.3 blocker).
 - **Build tool (Python):** `select_recommended` self-test — threshold selection, MIN_VOTES drop,
   floor-to-100 when few pass, cap-to-200 when many pass, and a system with <100 rated games.
 - **On-device:** badge appears on known classics (e.g. Super Metroid, Zelda) and not on shovelware;
