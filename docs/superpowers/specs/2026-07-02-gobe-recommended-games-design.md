@@ -69,7 +69,8 @@ person's library automatically — the tagging is by game identity, not tied to 
   `matcher.match(displayName, index(system))?.recommended ?: false` (a cheap in-memory normalize +
   map lookup) and, only when it differs from the stored value, write it via a new
   `GameDao.updateRecommended(id, recommended)`. This is idempotent, O(n) lookups with DB writes only
-  on change, and backfills both fresh scans and already-scanned libraries on the next rescan.
+  on change, and backfills both fresh scans and already-scanned libraries on the next rescan. Wrap
+  the refresh writes in the same `runInTransaction { }` the existing meta pass uses.
 - Any library, any user — a game is tagged iff its cleaned name matches a recommended entry in the
   bundled index. Homebrew/hacks not in the dataset stay untagged (correct — they aren't "essential").
 
@@ -98,7 +99,9 @@ person's library automatically — the tagging is by game identity, not tied to 
   `AND (:recommendedOnly = 0 OR recommended = 1)` and change the ordering to
   `ORDER BY recommended DESC, displayName COLLATE NOCASE ASC`. Thread the new arg through
   `LibraryRepository.searchGames(query, system, genre, recommendedOnly)` and the `HomeViewModel`
-  `combine` (add a 4th flow for the filter state).
+  `combine` (add a 4th flow for the filter state). Note: the current `combine` packs 3 flows into a
+  `Triple`; a 4th flow can't ride a `Triple`, so switch to a small holder data class (or the vararg
+  `combine(...) { array -> }`).
 - Add `GameDao.updateRecommended(id, recommended)` (see §3.3) and extend `updateMeta` with the flag.
 
 ## 4. Out of scope (deferred)
