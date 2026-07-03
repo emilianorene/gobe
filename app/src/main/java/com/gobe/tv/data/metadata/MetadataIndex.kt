@@ -2,10 +2,17 @@ package com.gobe.tv.data.metadata
 
 import org.json.JSONObject
 
-data class GameMeta(val boxart: String?, val players: Int?, val genre: String? = null, val year: Int? = null)
+data class GameMeta(
+    val boxart: String?,
+    val players: Int?,
+    val genre: String? = null,
+    val year: Int? = null,
+    val recommended: Boolean = false,
+)
 
 class MetadataIndex(private val map: Map<String, GameMeta>) {
     operator fun get(normalized: String): GameMeta? = map[normalized]
+    fun isEmpty(): Boolean = map.isEmpty()
     companion object {
         fun parse(json: String): MetadataIndex {
             val obj = JSONObject(json)
@@ -17,6 +24,7 @@ class MetadataIndex(private val map: Map<String, GameMeta>) {
                     players = if (o.has("players")) o.optInt("players") else null,
                     genre = o.optString("genre").ifBlank { null },
                     year = if (o.has("year")) o.optInt("year") else null,
+                    recommended = o.optBoolean("recommended", false),
                 )
             }
             return MetadataIndex(m)

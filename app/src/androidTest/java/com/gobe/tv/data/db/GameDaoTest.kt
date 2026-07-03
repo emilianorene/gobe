@@ -70,16 +70,16 @@ class GameDaoTest {
         ))
         val g = dao.getAll().first()
         dao.updateMeta(g.id, players = 2, boxartName = "Super Mario World", genre = "Platform", year = 1991)
-        val hits = dao.searchGames("Mario", System.SNES.name, null).first()
+        val hits = dao.searchGames("Mario", System.SNES.name, null, 0).first()
         assertEquals(1, hits.size)
         assertEquals(2, hits[0].players)
         assertEquals("Super Mario World", hits[0].boxartName)
         assertEquals("Platform", hits[0].genre)
         assertEquals(1991, hits[0].year)
         // filter by other system returns nothing
-        assertEquals(0, dao.searchGames("Mario", System.NES.name, null).first().size)
+        assertEquals(0, dao.searchGames("Mario", System.NES.name, null, 0).first().size)
         // null system = all systems
-        assertEquals(1, dao.searchGames("Mario", null, null).first().size)
+        assertEquals(1, dao.searchGames("Mario", null, null, 0).first().size)
     }
 
     private fun game(name: String, system: System, genre: String?) = GameEntity(
@@ -105,10 +105,25 @@ class GameDaoTest {
             game("C", System.SNES, "Platform"),
         ))
         // genre only
-        assertEquals(listOf("A", "B"), dao.searchGames("", null, "Action").first().map { it.displayName })
+        assertEquals(listOf("A", "B"), dao.searchGames("", null, "Action", 0).first().map { it.displayName })
         // genre + system
-        assertEquals(listOf("A"), dao.searchGames("", "SNES", "Action").first().map { it.displayName })
+        assertEquals(listOf("A"), dao.searchGames("", "SNES", "Action", 0).first().map { it.displayName })
         // no genre = unchanged (all)
-        assertEquals(3, dao.searchGames("", null, null).first().size)
+        assertEquals(3, dao.searchGames("", null, null, 0).first().size)
+    }
+
+    @Test fun searchRecommendedOnlyAndSortsRecommendedFirst() = runBlocking {
+        dao.insertAll(listOf(
+            GameEntity(path = "/a", system = System.SNES, displayName = "Alpha",
+                fileName = "a.sfc", sizeBytes = 1, dateAdded = 1L),   // recommended=false (default)
+            GameEntity(path = "/z", system = System.SNES, displayName = "Zeta",
+                fileName = "z.sfc", sizeBytes = 1, dateAdded = 1L),
+        ))
+        val zeta = dao.getAll().first { it.displayName == "Zeta" }
+        dao.updateRecommended(zeta.id, true)
+        // recommendedOnly = 1 -> only Zeta
+        assertEquals(listOf("Zeta"), dao.searchGames("", null, null, 1).first().map { it.displayName })
+        // recommendedOnly = 0 -> Zeta first (recommended DESC), then Alpha
+        assertEquals(listOf("Zeta", "Alpha"), dao.searchGames("", null, null, 0).first().map { it.displayName })
     }
 }

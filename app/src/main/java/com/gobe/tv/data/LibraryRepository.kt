@@ -79,17 +79,35 @@ class LibraryRepository(
             }
         }
 
+        // Refresh `recommended` across ALL games (backfills already-scanned libraries; the candidate
+        // filter above only re-matches never-matched rows). Cheap in-memory match; writes on change.
+        if (m != null && provider != null) {
+            val recoUpdates = recommendedBackfillUpdates(gameDao.getAll()) { e ->
+                val idx = provider(e.system)
+                // An empty index means the bundled asset failed to load — don't clear existing flags
+                // on a transient failure (unlike a real "no longer recommended" match).
+                if (idx.isEmpty()) e.recommended else m.match(e.displayName, idx)?.recommended ?: false
+            }
+            if (recoUpdates.isNotEmpty()) {
+                runInTransaction {
+                    recoUpdates.forEach { (id, reco) -> gameDao.updateRecommended(id, reco) }
+                }
+            }
+        }
+
         return gameDao.getAll().size
     }
 
     fun genres(): Flow<List<String>> = gameDao.distinctGenres()
 
-    fun searchGames(query: String, system: System?, genre: String? = null): Flow<List<Game>> =
-        gameDao.searchGames(query, system?.name, genre).map { list -> list.map { it.toDomain() } }
+    fun searchGames(query: String, system: System?, genre: String? = null, recommendedOnly: Boolean = false): Flow<List<Game>> =
+        gameDao.searchGames(query, system?.name, genre, if (recommendedOnly) 1 else 0)
+            .map { list -> list.map { it.toDomain() } }
 
     private fun GameEntity.toDomain() = Game(
         id, path, system, displayName, fileName, sizeBytes, lastPlayed, dateAdded,
         players = players, boxartName = boxartName, genre = genre, year = year,
+        recommended = recommended,
     )
 
     private data class MetaUpdate(

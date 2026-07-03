@@ -50,6 +50,7 @@ fun HomeScreen(app: GobeApp, onOpenGame: (Long) -> Unit, onOpenSettings: () -> U
     val query by vm.query.collectAsState()
     val selectedSystem by vm.selectedSystem.collectAsState()
     val selectedGenre by vm.selectedGenre.collectAsState()
+    val recommendedOnly by vm.recommendedOnly.collectAsState()
     val genres by vm.genres.collectAsState()
     val settingsFocus = remember { FocusRequester() }
     val searchFocus = remember { FocusRequester() }
@@ -106,6 +107,11 @@ fun HomeScreen(app: GobeApp, onOpenGame: (Long) -> Unit, onOpenSettings: () -> U
                     onClick = { vm.setSystem(sys) },
                 )
             }
+            FilterChip(
+                label = stringResource(R.string.filter_recommended),
+                selected = recommendedOnly,
+                onClick = { vm.setRecommendedOnly(!recommendedOnly) },
+            )
         }
 
         // Genre chips: a scrollable second row (genres are unbounded, unlike the fixed system enum).
