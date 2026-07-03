@@ -103,11 +103,13 @@ data class GameMeta(
 )
 ```
 
-and inside `parse`, in the `GameMeta(...)` construction, add:
+and inside `parse`, in the `GameMeta(...)` construction, add **only** the `recommended =` line. The
+`year = ...` line below already exists (`MetadataIndex.kt:19`) and is shown only as the anchor —
+insert the new line right after it, do NOT duplicate `year`:
 
 ```kotlin
-                    year = if (o.has("year")) o.optInt("year") else null,
-                    recommended = o.optBoolean("recommended", false),
+                    year = if (o.has("year")) o.optInt("year") else null,   // existing anchor line
+                    recommended = o.optBoolean("recommended", false),        // <-- add only this
 ```
 
 - [ ] **Step 4: Run to verify it passes**
@@ -293,35 +295,44 @@ In `GameDao.kt`, update `searchGames` and add `updateRecommended`:
 
 (Leave `updateMeta` unchanged — see the plan's "Note on `updateMeta`".)
 
-- [ ] **Step 2: Add an instrumented DAO test (to run on device later)**
+- [ ] **Step 2: Update the existing `searchGames` call sites (REQUIRED — build break otherwise)**
 
-Append to `GameDaoTest.kt` a test mirroring its existing style (in-memory Room). It asserts the
-filter + sort:
+Room DAO methods can't have Kotlin default args, so the new 4th param breaks every existing 3-arg
+call. `GameDaoTest.kt` calls `dao.searchGames(...)` at **lines 73, 80, 82, 108, 110, 112** — append
+`, 0` to each (the un-filtered case), e.g. `dao.searchGames("Mario", System.SNES.name, null)` →
+`dao.searchGames("Mario", System.SNES.name, null, 0)`. (The app-side call in `LibraryRepository` is
+updated in Task 5.) Grep to be sure none are missed:
+`grep -rn "\.searchGames(" app/src` — every call must pass 4 args after this task.
+
+- [ ] **Step 3: Add an instrumented DAO test (to run on device later)**
+
+Append to `GameDaoTest.kt` a test mirroring its existing style (in-memory Room). **Build entities with
+the real `GameEntity(...)` constructor** (there is no `gameEntity(...)` factory; read the top of the
+file for its private `game(...)` helper and required fields — `path`, `system`, `displayName`,
+`fileName`, `sizeBytes`, `dateAdded` are required):
 ```kotlin
     @Test fun searchRecommendedOnlyAndSortsRecommendedFirst() = runBlocking {
         dao.insertAll(listOf(
-            gameEntity(path = "/a", displayName = "Alpha"),          // recommended defaults false
-            gameEntity(path = "/z", displayName = "Zeta"),
+            GameEntity(path = "/a", system = System.SNES, displayName = "Alpha",
+                       fileName = "a.sfc", sizeBytes = 1, dateAdded = 1L),           // recommended=false (default)
+            GameEntity(path = "/z", system = System.SNES, displayName = "Zeta",
+                       fileName = "z.sfc", sizeBytes = 1, dateAdded = 1L),
         ))
         val zeta = dao.getAll().first { it.displayName == "Zeta" }
         dao.updateRecommended(zeta.id, true)
         // recommendedOnly = 1 -> only Zeta
-        val only = dao.searchGames("", null, null, 1).first()
-        assertEquals(listOf("Zeta"), only.map { it.displayName })
+        assertEquals(listOf("Zeta"), dao.searchGames("", null, null, 1).first().map { it.displayName })
         // recommendedOnly = 0 -> Zeta first (recommended DESC), then Alpha
-        val all = dao.searchGames("", null, null, 0).first()
-        assertEquals(listOf("Zeta", "Alpha"), all.map { it.displayName })
+        assertEquals(listOf("Zeta", "Alpha"), dao.searchGames("", null, null, 0).first().map { it.displayName })
     }
 ```
-(Match the existing test's helper names — if it uses a different factory than `gameEntity(...)`, adapt.
-Read the top of `GameDaoTest.kt` first.)
 
-- [ ] **Step 3: Compile (unit) — instrumented test runs on device later**
+- [ ] **Step 4: Compile (unit) — instrumented test runs on device later**
 
 Run: `./gradlew :app:assembleDebug`
 Expected: BUILD SUCCESSFUL. (Do NOT run `connectedAndroidTest` now — needs the ONN; defer.)
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
 git add app/src/main/java/com/gobe/tv/data/db/GameDao.kt app/src/androidTest/java/com/gobe/tv/data/db/GameDaoTest.kt
@@ -695,12 +706,14 @@ player/genre/year merge, before writing the JSON), merge the flag:
     else:
         print(f"  (no IGDB creds; recommended flag skipped for {tag})", file=sys.stderr)
     for key in reco_keys:
-        entry = out.setdefault(key, {})   # tag even games without boxart/players
+        entry = index.setdefault(key, {})   # tag even games without boxart/players
         entry["recommended"] = True
 ```
-(Adapt `out` / `tag` to the actual variable names in `main()` — read the surrounding loop first. The
-key idea: after building each system's dict, set `recommended=True` on the recommended keys, creating
-bare entries for recommended games that had no other metadata.)
+(In the real `main()` the per-system output dict is named **`index`** and the loop var is **`tag`** —
+use those. After building each system's dict and before writing the JSON, set `recommended=True` on
+the recommended keys, creating bare entries for recommended games that had no other metadata.
+Optional: hoist the `igdb_token(...)` call above the per-system loop so it authenticates once instead
+of 4×; harmless either way.)
 
 Update the module docstring to mention the IGDB source + the `IGDB_CLIENT_ID`/`IGDB_SECRET` env vars.
 
