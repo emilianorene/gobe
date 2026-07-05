@@ -179,11 +179,22 @@ fun coverUrl(game: Game, builder: BoxartUrlBuilder = BoxartUrlBuilder()): String
     suspend fun updateIndexExtras(id: Long, recommended: Boolean, description: String?, igdbCover: String?)
 ```
 (Leave `updateRecommended` — still used by existing tests.)
-- [ ] **Step 2: Fix the existing `updateMeta` call in `GameDaoTest.kt`** (`searchAndUpdateMeta`, ~line 72): add the 2 new args:
+- [ ] **Step 2: Update the `LibraryRepository` `updateMeta` caller IN THIS TASK (else main won't compile).**
+  Widening `updateMeta` to 7 params breaks `LibraryRepository.kt:77` (the candidate pass) — a main-source
+  compile error that `assembleDebug` WILL hit. Fix it here (only the refresh-pass generalization + `toDomain`
+  stay in Task 5). Extend the private `MetaUpdate` data class with `val description: String?, val igdbCover: String?`,
+  and in the candidate pass:
+```kotlin
+                MetaUpdate(e.id, meta.players, meta.boxart, meta.genre, meta.year, meta.description, meta.igdbCover)
+```
+```kotlin
+                    updates.forEach { u -> gameDao.updateMeta(u.id, u.players, u.boxart, u.genre, u.year, u.description, u.igdbCover) }
+```
+- [ ] **Step 3: Fix the existing `updateMeta` call in `GameDaoTest.kt`** (`searchAndUpdateMeta`, ~line 72): add the 2 new args:
 ```kotlin
         dao.updateMeta(g.id, players = 2, boxartName = "Super Mario World", genre = "Platform", year = 1991, description = null, igdbCover = null)
 ```
-- [ ] **Step 3: Add an instrumented test** to `GameDaoTest.kt`:
+- [ ] **Step 4: Add an instrumented test** to `GameDaoTest.kt`:
 ```kotlin
     @Test fun updateIndexExtrasWrites() = runBlocking {
         dao.insertAll(listOf(GameEntity(path = "/a", system = System.SNES, displayName = "Alpha", fileName = "a", sizeBytes = 1, dateAdded = 1L)))
@@ -195,8 +206,8 @@ fun coverUrl(game: Game, builder: BoxartUrlBuilder = BoxartUrlBuilder()): String
         assertEquals("co999", row.igdbCover)
     }
 ```
-- [ ] **Step 4:** `./gradlew :app:assembleDebug` → BUILD SUCCESSFUL. (androidTest runs on device later.)
-- [ ] **Step 5:** Commit `git commit -m "feat(db): updateMeta carries description+igdbCover; add updateIndexExtras"`
+- [ ] **Step 5:** `./gradlew :app:assembleDebug` → BUILD SUCCESSFUL (main compiles because Step 2 fixed the caller; androidTest runs on device later).
+- [ ] **Step 6:** Commit `git add data/db/GameDao.kt data/LibraryRepository.kt androidTest/.../GameDaoTest.kt && git commit -m "feat(db): updateMeta carries description+igdbCover; add updateIndexExtras"`
 
 ---
 
@@ -262,15 +273,8 @@ class RecommendedBackfillTest {
     }
 }
 ```
-- [ ] **Step 3: Update `rescan()` in `LibraryRepository.kt`:**
-  - Extend the candidate pass's `MetaUpdate` + `updateMeta` call with description/igdbCover:
-```kotlin
-                MetaUpdate(e.id, meta.players, meta.boxart, meta.genre, meta.year, meta.description, meta.igdbCover)
-```
-```kotlin
-                    updates.forEach { u -> gameDao.updateMeta(u.id, u.players, u.boxart, u.genre, u.year, u.description, u.igdbCover) }
-```
-  - Extend the private `MetaUpdate` data class with `val description: String?, val igdbCover: String?`.
+- [ ] **Step 3: Update `rescan()` in `LibraryRepository.kt`:** (the candidate pass's `MetaUpdate`/`updateMeta`
+  were already extended in Task 4 Step 2 — here do only the refresh pass + `toDomain`.)
   - Replace the recommended refresh pass with the generalized one:
 ```kotlin
         // Refresh index-derived fields (recommended/description/igdbCover) across ALL games — backfills
@@ -311,7 +315,8 @@ Add `import com.gobe.tv.data.art.coverUrl`. Remove the now-unused `private val b
 ```kotlin
     val url = com.gobe.tv.data.art.coverUrl(game)
 ```
-(remove the local `BoxartUrlBuilder().url(...)`.)
+(remove the local `BoxartUrlBuilder().url(...)`, and remove the now-unused
+`import com.gobe.tv.data.art.BoxartUrlBuilder` from DetailScreen's imports.)
 - [ ] **Step 3: DetailScreen description paragraph** — after the size-line `Text(...)` (the `detail_size_kb` block) add:
 ```kotlin
                     if (!g.description.isNullOrBlank()) {
