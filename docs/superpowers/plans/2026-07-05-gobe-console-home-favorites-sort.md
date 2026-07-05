@@ -222,16 +222,10 @@ fun sectionFilter(section: LibrarySection): SectionFilter = when (section) {
         assertEquals(listOf("Alpha", "Zeta", "NoYear"), dao.searchGames("", null, null, 0, 0, 2).first().map { it.displayName })
     }
 ```
-- [ ] **Step 4:** `./gradlew :app:assembleDebug` → BUILD SUCCESSFUL. (Instrumented tests run on device later; do NOT run `connectedAndroidTest` now.)
-- [ ] **Step 5:** Commit `git add data/db/GameDao.kt androidTest/.../GameDaoTest.kt && git commit -m "feat(db): favoritesOnly filter + CASE sortMode order + updateFavorite"`
-
----
-
-## Task 5: LibraryRepository threading
-
-**Files:** `data/LibraryRepository.kt`.
-
-- [ ] **Step 1: Update `searchGames`, `toDomain`, add `updateFavorite`.** Add import `import com.gobe.tv.domain.SortMode`. Replace `searchGames`:
+- [ ] **Step 4: Update `LibraryRepository` in the SAME task (else the build breaks).** Changing the
+  DAO to 6 args breaks `LibraryRepository.searchGames` (it calls the old 4-arg form at
+  `LibraryRepository.kt:104`), so this must be fixed here, not in a later task. Add import
+  `import com.gobe.tv.domain.SortMode`; replace `searchGames` + add `updateFavorite`:
 ```kotlin
     fun searchGames(
         query: String, system: System?, genre: String? = null,
@@ -250,8 +244,16 @@ In `toDomain()` add `favorite = favorite` to the `Game(...)`:
         players = players, boxartName = boxartName, genre = genre, year = year,
         recommended = recommended, favorite = favorite,
 ```
-- [ ] **Step 2:** `./gradlew :app:assembleDebug` → BUILD SUCCESSFUL. (`HomeViewModel` still calls the old-ish `searchGames` with defaults filling the new args — compiles because the new params have Kotlin defaults; it's removed in Task 8 anyway.)
-- [ ] **Step 3:** Commit `git add data/LibraryRepository.kt && git commit -m "feat(library): searchGames favoritesOnly+sortMode, updateFavorite, toDomain favorite"`
+(`HomeViewModel` still calls `searchGames` with the new params defaulted — compiles fine; it's removed in Task 8.)
+- [ ] **Step 5:** `./gradlew :app:assembleDebug` → BUILD SUCCESSFUL. (Instrumented tests run on device later; do NOT run `connectedAndroidTest` now.)
+- [ ] **Step 6:** Commit `git add data/db/GameDao.kt androidTest/.../GameDaoTest.kt data/LibraryRepository.kt && git commit -m "feat(db): favoritesOnly filter + CASE sortMode order + updateFavorite + repo threading"`
+
+---
+
+## Task 5: (merged into Task 4)
+
+The `LibraryRepository` threading is done in Task 4 Step 4 (it must be, or Task 4's build breaks). This
+task number is intentionally a no-op; continue at Task 6.
 
 ---
 
@@ -304,8 +306,10 @@ fun GobeNavHost(app: GobeApp) {
                     app.returnToHomeOnResume = false
                     if (StoragePermission.isGranted()) { resetTo(Route.Home); return@LifecycleEventObserver }
                 }
+                // Read the stack FRESH here — do not use the composition-captured `route` local,
+                // which the observer closure would freeze at first composition (stale-value bug).
                 if (!StoragePermission.isGranted()) resetTo(Route.Permission)
-                else if (route is Route.Permission) resetTo(Route.Home)
+                else if (stack.last() is Route.Permission) resetTo(Route.Home)
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -422,7 +426,10 @@ import com.gobe.tv.ui.home.GameTile
 @Composable
 fun LibraryScreen(app: GobeApp, section: LibrarySection, onOpenGame: (Long) -> Unit, onBack: () -> Unit) {
     BackHandler { onBack() }
-    val vm: LibraryViewModel = viewModel(factory = vmFactory { LibraryViewModel(app.repository, section) })
+    // MUST key by section: there is one ViewModelStoreOwner (the Activity), so an unkeyed
+    // viewModel() caches by class name and a second section would reuse the first's VM (showing the
+    // wrong games). `section.toString()` is a stable per-section key (data class/object toString).
+    val vm: LibraryViewModel = viewModel(key = section.toString(), factory = vmFactory { LibraryViewModel(app.repository, section) })
     val games by vm.games.collectAsState()
     val genres by vm.genres.collectAsState()
     val selectedGenre by vm.selectedGenre.collectAsState()
@@ -544,6 +551,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.runtime.*
