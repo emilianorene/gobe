@@ -121,6 +121,20 @@ fun GameTile(
                             .padding(horizontal = 5.dp, vertical = 1.dp),
                     )
                 }
+
+                if (game.favorite) {
+                    Text(
+                        "♥",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color(0xFFE53935),
+                        modifier = Modifier
+                            .align(Alignment.BottomStart)
+                            .padding(4.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color(0xCC000000))
+                            .padding(horizontal = 5.dp, vertical = 1.dp),
+                    )
+                }
             }
         }
         Spacer(Modifier.height(6.dp))
