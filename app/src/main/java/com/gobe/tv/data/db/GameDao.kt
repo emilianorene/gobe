@@ -32,12 +32,15 @@ interface GameDao {
     @Query("SELECT DISTINCT genre FROM games WHERE genre IS NOT NULL AND genre != '' ORDER BY genre COLLATE NOCASE ASC")
     fun distinctGenres(): Flow<List<String>>
 
-    @Query("SELECT * FROM games WHERE displayName LIKE '%' || :q || '%' AND (:system IS NULL OR system = :system) AND (:genre IS NULL OR genre = :genre) AND (:recommendedOnly = 0 OR recommended = 1) ORDER BY recommended DESC, displayName COLLATE NOCASE ASC")
-    fun searchGames(q: String, system: String?, genre: String?, recommendedOnly: Int): Flow<List<GameEntity>>
+    @Query("SELECT * FROM games WHERE displayName LIKE '%' || :q || '%' AND (:system IS NULL OR system = :system) AND (:genre IS NULL OR genre = :genre) AND (:recommendedOnly = 0 OR recommended = 1) AND (:favoritesOnly = 0 OR favorite = 1) ORDER BY CASE WHEN :sortMode = 0 THEN recommended ELSE 0 END DESC, CASE WHEN :sortMode = 2 THEN year END DESC, displayName COLLATE NOCASE ASC")
+    fun searchGames(q: String, system: String?, genre: String?, recommendedOnly: Int, favoritesOnly: Int, sortMode: Int): Flow<List<GameEntity>>
 
     @Query("UPDATE games SET players = :players, boxartName = :boxartName, genre = :genre, year = :year WHERE id = :id")
     suspend fun updateMeta(id: Long, players: Int?, boxartName: String?, genre: String?, year: Int?)
 
     @Query("UPDATE games SET recommended = :recommended WHERE id = :id")
     suspend fun updateRecommended(id: Long, recommended: Boolean)
+
+    @Query("UPDATE games SET favorite = :favorite WHERE id = :id")
+    suspend fun updateFavorite(id: Long, favorite: Boolean)
 }
