@@ -20,4 +20,5 @@ data class GameEntity(
     val genre: String? = null,
     val year: Int? = null,
     val recommended: Boolean = false,
+    val favorite: Boolean = false,
 )

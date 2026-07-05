@@ -6,7 +6,7 @@ import androidx.room.TypeConverters
 
 @Database(
     entities = [GameEntity::class, RomFolderEntity::class],
-    version = 4,
+    version = 5,
     exportSchema = false,
 )
 @TypeConverters(Converters::class)
@@ -27,6 +27,10 @@ abstract class GobeDatabase : RoomDatabase() {
 
         val MIGRATION_3_4 = androidx.room.migration.Migration(3, 4) { db ->
             db.execSQL("ALTER TABLE games ADD COLUMN recommended INTEGER NOT NULL DEFAULT 0")
+        }
+
+        val MIGRATION_4_5 = androidx.room.migration.Migration(4, 5) { db ->
+            db.execSQL("ALTER TABLE games ADD COLUMN favorite INTEGER NOT NULL DEFAULT 0")
         }
     }
 }
