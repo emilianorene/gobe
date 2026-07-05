@@ -42,6 +42,12 @@ at runtime like the existing libretro art.
   - `igdbCover`: set on **every matched key** that has a `cover.image_id`.
   - `description`: set **only on keys in the recommended set** (already computed by
     `select_recommended`) that have a non-empty `summary`.
+  - **Coverage caveat:** the existing query is gated by `total_rating != null & total_rating_count >= 5`,
+    so `igdbCover` only exists for games IGDB has 5+ rating votes for — NOT every game IGDB knows. That
+    systematically excludes obscure titles (which are the ones most likely to lack libretro art). This
+    is an accepted YAGNI trade-off (broadening to a rating-less cover query would cost many extra
+    requests + size and break the one-call constraint); missing covers just fall through to the
+    placeholder. "All matched" above means "all games in our rated-games fetch."
 - Requires the IGDB credentials again (`.igdb.env`) to regenerate the assets. (Note: if the secret was
   rotated after the recommended run, get a fresh one before the build step.)
 
@@ -55,6 +61,9 @@ at runtime like the existing libretro art.
     result, writing only changed rows and keeping the empty-index guard (a failed/empty index must not
     wipe existing values). A broadened DAO update (e.g. `updateIndexExtras(id, recommended,
     description, igdbCover)`) replaces the single-field `updateRecommended` call in that pass.
+  - Generalize the pure `recommendedBackfillUpdates` helper to return the three-field tuple
+    `(id, recommended, description, igdbCover)` for rows that differ; on an empty index for a system,
+    keep the row's existing `recommended`/`description`/`igdbCover` (no change), same guard as today.
 - `toDomain()` maps `description` + `igdbCover`.
 
 ### 3.4 Art resolution
