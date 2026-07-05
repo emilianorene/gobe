@@ -129,6 +129,22 @@ FDS and keep it for future M3U-based multi-disc systems, (c) document as unsuppo
 the button is simply never shown (harmless — no crash), and disk-swap must NOT be advertised in the
 v0.2 release notes.**
 
+## Top-100 Arcade curated list (queued 2026-07-05)
+
+The user wants to grow the arcade library toward "the 100 best arcade games". **We do NOT download or
+source ROMs** — that's copyright infringement and contradicts Gobe's own "bring your own legally-obtained
+files" policy (README). The legal, useful deliverable instead:
+
+- Export a **ranked "Top 100 Arcade" list** derived from IGDB (we already fetch arcade ratings; ~200
+  arcade games are flagged `recommended`). For each, include the **FBNeo/MAME set name** (the `.zip`
+  basename the core expects, e.g. `sf2ce`, `mvsc`) so the user knows exactly what to look for/dump.
+  Source the set names from the MAME/FBNeo DAT or the libretro MAME `.rdb` we already parse in
+  `build.py`. Output a simple markdown/CSV the user can check off.
+- Optional companion: a small "romset doctor" — point it at `Download/ROMs/Arcade/`, report which of
+  the Top-100 are present, which `.zip`s are missing files the core needs, and which are absent.
+
+Purely a curation/verification aid; no game content is distributed.
+
 ## Other noted follow-ups
 
 - Genre filter/browse on Home (genre data already in the index + Room).
