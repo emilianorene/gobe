@@ -70,16 +70,16 @@ class GameDaoTest {
         ))
         val g = dao.getAll().first()
         dao.updateMeta(g.id, players = 2, boxartName = "Super Mario World", genre = "Platform", year = 1991)
-        val hits = dao.searchGames("Mario", System.SNES.name, null, 0).first()
+        val hits = dao.searchGames("Mario", System.SNES.name, null, 0, 0, 0).first()
         assertEquals(1, hits.size)
         assertEquals(2, hits[0].players)
         assertEquals("Super Mario World", hits[0].boxartName)
         assertEquals("Platform", hits[0].genre)
         assertEquals(1991, hits[0].year)
         // filter by other system returns nothing
-        assertEquals(0, dao.searchGames("Mario", System.NES.name, null, 0).first().size)
+        assertEquals(0, dao.searchGames("Mario", System.NES.name, null, 0, 0, 0).first().size)
         // null system = all systems
-        assertEquals(1, dao.searchGames("Mario", null, null, 0).first().size)
+        assertEquals(1, dao.searchGames("Mario", null, null, 0, 0, 0).first().size)
     }
 
     private fun game(name: String, system: System, genre: String?) = GameEntity(
@@ -105,11 +105,11 @@ class GameDaoTest {
             game("C", System.SNES, "Platform"),
         ))
         // genre only
-        assertEquals(listOf("A", "B"), dao.searchGames("", null, "Action", 0).first().map { it.displayName })
+        assertEquals(listOf("A", "B"), dao.searchGames("", null, "Action", 0, 0, 0).first().map { it.displayName })
         // genre + system
-        assertEquals(listOf("A"), dao.searchGames("", "SNES", "Action", 0).first().map { it.displayName })
+        assertEquals(listOf("A"), dao.searchGames("", "SNES", "Action", 0, 0, 0).first().map { it.displayName })
         // no genre = unchanged (all)
-        assertEquals(3, dao.searchGames("", null, null, 0).first().size)
+        assertEquals(3, dao.searchGames("", null, null, 0, 0, 0).first().size)
     }
 
     @Test fun searchRecommendedOnlyAndSortsRecommendedFirst() = runBlocking {
@@ -122,8 +122,33 @@ class GameDaoTest {
         val zeta = dao.getAll().first { it.displayName == "Zeta" }
         dao.updateRecommended(zeta.id, true)
         // recommendedOnly = 1 -> only Zeta
-        assertEquals(listOf("Zeta"), dao.searchGames("", null, null, 1).first().map { it.displayName })
+        assertEquals(listOf("Zeta"), dao.searchGames("", null, null, 1, 0, 0).first().map { it.displayName })
         // recommendedOnly = 0 -> Zeta first (recommended DESC), then Alpha
-        assertEquals(listOf("Zeta", "Alpha"), dao.searchGames("", null, null, 0).first().map { it.displayName })
+        assertEquals(listOf("Zeta", "Alpha"), dao.searchGames("", null, null, 0, 0, 0).first().map { it.displayName })
+    }
+
+    @Test fun favoritesOnlyFilters() = runBlocking {
+        dao.insertAll(listOf(
+            GameEntity(path = "/a", system = System.SNES, displayName = "Alpha", fileName = "a", sizeBytes = 1, dateAdded = 1L),
+            GameEntity(path = "/b", system = System.SNES, displayName = "Beta", fileName = "b", sizeBytes = 1, dateAdded = 1L),
+        ))
+        val beta = dao.getAll().first { it.displayName == "Beta" }
+        dao.updateFavorite(beta.id, true)
+        assertEquals(listOf("Beta"), dao.searchGames("", null, null, 0, 1, 0).first().map { it.displayName })
+        // favorite persists after an unrelated recommended write (independence)
+        dao.updateRecommended(beta.id, true)
+        assertEquals(true, dao.getById(beta.id)!!.favorite)
+    }
+
+    @Test fun sortModeTitleAndYear() = runBlocking {
+        dao.insertAll(listOf(
+            GameEntity(path = "/z", system = System.SNES, displayName = "Zeta", fileName = "z", sizeBytes = 1, dateAdded = 1L, year = 1990),
+            GameEntity(path = "/a", system = System.SNES, displayName = "Alpha", fileName = "a", sizeBytes = 1, dateAdded = 1L, year = 1995),
+            GameEntity(path = "/n", system = System.SNES, displayName = "NoYear", fileName = "n", sizeBytes = 1, dateAdded = 1L, year = null),
+        ))
+        // TITLE (mode 1): alphabetical
+        assertEquals(listOf("Alpha", "NoYear", "Zeta"), dao.searchGames("", null, null, 0, 0, 1).first().map { it.displayName })
+        // YEAR (mode 2): newest first, unknown year last
+        assertEquals(listOf("Alpha", "Zeta", "NoYear"), dao.searchGames("", null, null, 0, 0, 2).first().map { it.displayName })
     }
 }

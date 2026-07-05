@@ -17,6 +17,17 @@
     <!-- Recommended badge -->
     <string name="game_recommended">Recommended</string>
     <string name="filter_recommended">Recommended</string>
+    <!-- v0.3 console-home + favorites + sort -->
+    <string name="home_consoles">Consoles</string>
+    <string name="section_recommended">Recommended</string>
+    <string name="section_favorites">Favorites</string>
+    <string name="detail_favorite">Favorite</string>
+    <string name="detail_unfavorite">Favorited</string>
+    <string name="sort_label">Sort</string>
+    <string name="sort_recommended">Recommended</string>
+    <string name="sort_title">Title</string>
+    <string name="sort_year">Year</string>
+    <string name="library_empty">No games here.</string>
 
     <!-- Detail -->
     <string name="detail_loading">Loading…</string>

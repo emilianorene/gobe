@@ -32,13 +32,18 @@ import com.gobe.tv.emulation.EmulatorActivity
 import com.gobe.tv.emulation.EmulatorArgs
 import com.gobe.tv.emulation.SaveStateStore
 import com.gobe.tv.emulation.putEmulatorArgs
+import kotlinx.coroutines.launch
 
 @Composable
 fun DetailScreen(app: GobeApp, gameId: Long, onBack: () -> Unit) {
     BackHandler { onBack() }
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var game by remember { mutableStateOf<Game?>(null) }
     LaunchedEffect(gameId) { game = app.repository.getGame(gameId) }
+    // Local mirror so the button reflects taps immediately (the DB write is async).
+    var favorite by remember { mutableStateOf(false) }
+    LaunchedEffect(game) { favorite = game?.favorite ?: false }
     val playFocus = remember { FocusRequester() }
     val backFocus = remember { FocusRequester() }
 
@@ -144,6 +149,15 @@ fun DetailScreen(app: GobeApp, gameId: Long, onBack: () -> Unit) {
                         }
                     } else {
                         Button(onClick = { }, enabled = false) { Text("▶ " + stringResource(R.string.detail_play_soon)) }
+                    }
+                    Spacer(Modifier.height(12.dp))
+                    Button(onClick = {
+                        val id = g.id
+                        favorite = !favorite
+                        scope.launch { app.repository.updateFavorite(id, favorite) }
+                    }) {
+                        Text((if (favorite) "♥ " else "♡ ") +
+                            stringResource(if (favorite) R.string.detail_unfavorite else R.string.detail_favorite))
                     }
                     Spacer(Modifier.height(12.dp))
                     Button(onClick = onBack, modifier = Modifier.focusRequester(backFocus)) { Text(stringResource(R.string.detail_back)) }

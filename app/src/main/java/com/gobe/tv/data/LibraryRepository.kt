@@ -100,14 +100,22 @@ class LibraryRepository(
 
     fun genres(): Flow<List<String>> = gameDao.distinctGenres()
 
-    fun searchGames(query: String, system: System?, genre: String? = null, recommendedOnly: Boolean = false): Flow<List<Game>> =
-        gameDao.searchGames(query, system?.name, genre, if (recommendedOnly) 1 else 0)
-            .map { list -> list.map { it.toDomain() } }
+    fun searchGames(
+        query: String, system: System?, genre: String? = null,
+        recommendedOnly: Boolean = false, favoritesOnly: Boolean = false,
+        sortMode: com.gobe.tv.domain.SortMode = com.gobe.tv.domain.SortMode.RECOMMENDED,
+    ): Flow<List<Game>> =
+        gameDao.searchGames(
+            query, system?.name, genre,
+            if (recommendedOnly) 1 else 0, if (favoritesOnly) 1 else 0, sortMode.dbValue,
+        ).map { list -> list.map { it.toDomain() } }
+
+    suspend fun updateFavorite(id: Long, favorite: Boolean) = gameDao.updateFavorite(id, favorite)
 
     private fun GameEntity.toDomain() = Game(
         id, path, system, displayName, fileName, sizeBytes, lastPlayed, dateAdded,
         players = players, boxartName = boxartName, genre = genre, year = year,
-        recommended = recommended,
+        recommended = recommended, favorite = favorite,
     )
 
     private data class MetaUpdate(

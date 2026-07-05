@@ -13,6 +13,16 @@
     <string name="filter_all">Todos</string>
     <string name="game_recommended">Recomendado</string>
     <string name="filter_recommended">Recomendados</string>
+    <string name="home_consoles">Consolas</string>
+    <string name="section_recommended">Recomendados</string>
+    <string name="section_favorites">Favoritos</string>
+    <string name="detail_favorite">Favorito</string>
+    <string name="detail_unfavorite">Favorito ✓</string>
+    <string name="sort_label">Orden</string>
+    <string name="sort_recommended">Recomendados</string>
+    <string name="sort_title">Título</string>
+    <string name="sort_year">Año</string>
+    <string name="library_empty">No hay juegos acá.</string>
 
     <string name="detail_loading">Cargando…</string>
     <string name="detail_play">Jugar</string>
