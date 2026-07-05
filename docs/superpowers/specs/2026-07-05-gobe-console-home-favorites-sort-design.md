@@ -42,6 +42,11 @@ Back; the emulator-return path still resets to Home.
   - `data object Favorites`
   - `data class SearchAll(val query: String)`
 - Flow: Home → `Library(section)` → `Detail(gameId)` → Back → Library → Back → Home.
+- **Convert the hardcoded `onBack` lambdas to a `pop()`**: today `DetailScreen`, `SettingsScreen`,
+  `FoldersScreen`, `FolderBrowserScreen` all set `route = Route.Home` on back. Under the back stack
+  these become "pop the stack" so Detail returns to its parent (Library or Home, wherever it was
+  opened from), Settings/Folders return to Home, and FolderBrowser returns to Folders. Navigating
+  pushes; Back pops; an empty stack stays on Home.
 
 ## 4. In scope
 
@@ -71,9 +76,16 @@ Back; the emulator-return path still resets to Home.
 - Add `updateFavorite(id, favorite)` (`UPDATE games SET favorite = :favorite WHERE id = :id`).
 - `toDomain()` maps `favorite`. `LibraryRepository.searchGames(...)` gains `favoritesOnly` +
   `sortMode` args; `getGame`/detail returns `favorite`.
-- Genres per section: derive the genre list from the **section's** games (distinct genres among the
-  current section results) rather than the global list, so a console's genre chips only show genres
-  present there. (Compute in the Library ViewModel from the queried list, or a scoped DAO query.)
+- **Update existing call sites:** `searchGames` is a Room `@Query` (no default args), so growing it
+  from 4 → 6 params breaks every existing caller at compile time. Besides `LibraryRepository`
+  (updated above), the **8 existing `GameDaoTest` calls** (`GameDaoTest.kt` lines 73, 80, 82, 108,
+  110, 112, 125, 127) must be migrated to pass the two new args as `..., 0, 0` (favoritesOnly=0,
+  sortMode=0) — plain filter/sort tests unrelated to the new features. `HomeViewModel`'s old
+  `searchGames` call is removed by the §4.3 slim-down (Home no longer runs the flat grid).
+- Genres per section: derive the genre list from the **section's queried result list in the Library
+  ViewModel** (`results.mapNotNull { it.genre }.distinct().sorted()`) rather than the global
+  `distinctGenres()`, so a console's genre chips only show genres present there. No new DAO query
+  needed.
 
 ### 4.3 Level 1 — Home (reworked `HomeScreen`)
 - Global **search** box (top) → on submit, navigate to `Library(SearchAll(query))`.
@@ -92,10 +104,12 @@ Back; the emulator-return path still resets to Home.
 - UI: section **title**; **genre** chips (scoped, incl. "All"); a **sort** control
   (cycling button "↕ <mode>": Recommended → Title → Year); the **grid** of that section's games with
   **★** (recommended) + **♥** (favorite) badges; tiles → Detail; Back → Home.
-- `LibraryViewModel` holds `selectedGenre` + `sortMode` (session state, like today's filters — not
-  persisted) and calls `repo.searchGames(query, system, genre, recommendedOnly, favoritesOnly, sortMode)`
-  with the section's fixed base filter. The 6-input `combine` uses the vararg `combine(...) { arr -> }`
-  (or nested combines), since the typed `combine` overloads stop at 5.
+- `LibraryViewModel` holds only two reactive `StateFlow`s — `selectedGenre` + `sortMode` (session
+  state, not persisted). The section's base filter (query, system, recommendedOnly, favoritesOnly) is
+  a **constant** derived once from the fixed `LibrarySection`. So the reactive part is a simple
+  **2-input** combine passing the constants straight through:
+  `combine(selectedGenre, sortMode) { g, s -> g to s }.flatMapLatest { (g, s) -> repo.searchGames(baseQuery, baseSystem, g, baseReco, baseFav, s) }`.
+  (No vararg combine needed — the typed 2-arg overload is fine.)
 
 ### 4.5 Favorites UI
 - **Detail screen**: a **"♥ Favorito"** toggle button (filled ♥ when favorite, ♡ when not) near
@@ -142,7 +156,8 @@ Back; the emulator-return path still resets to Home.
 - **Unit/instrumented (DAO):** `favoritesOnly` filters; each `sortMode` orders correctly (mode 0
   recommended-first, mode 1 title, mode 2 year-desc with a null-year row sorted last); `updateFavorite`
   persists; **a favorited game stays favorited after `rescan()`** (guards the user-data-vs-backfill
-  boundary).
+  boundary). Also **migrate the 8 existing `GameDaoTest.searchGames(...)` calls to the 6-arg signature**
+  (append `, 0, 0`) so the suite compiles.
 - **Unit (JVM):** `LibrarySection` → base-filter mapping (a small pure mapper is worth extracting and
   testing: section → (system?, recommendedOnly, favoritesOnly, query)).
 - **On-device:** Home shows console + Recommended + Favorites sections; entering SNES shows only SNES
@@ -154,9 +169,10 @@ Back; the emulator-return path still resets to Home.
 1. **Home rewrite scope** — this restructures Home + adds a navigation level; larger than a chip. Kept
    cohesive by reusing the tile/grid components and the existing `searchGames` (just more args).
 2. **Back navigation** — moving from single-`route` to a back stack must not break the emulator-return
-   (`returnToHomeOnResume`) or permission flows; covered explicitly in §3/§7.
-3. **6-arg `combine`** — needs the vararg form; typed overloads stop at 5 (noted in §4.4).
-4. **Scoped genres** — deriving per-section genres adds a little logic; acceptable, keeps chips honest.
+   (`returnToHomeOnResume`) or permission flows, and the four hardcoded `onBack = Route.Home` lambdas
+   must convert to `pop()`; covered explicitly in §3/§7.
+3. **Scoped genres** — deriving per-section genres from the queried result list adds a little
+   ViewModel logic; acceptable, keeps chips honest.
 
 ## 10. Defaults (change on request)
 
