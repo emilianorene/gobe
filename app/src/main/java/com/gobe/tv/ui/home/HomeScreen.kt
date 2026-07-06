@@ -29,6 +29,7 @@ import androidx.compose.ui.input.key.nativeKeyCode
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
@@ -176,17 +177,20 @@ private fun SectionTile(
         colors = CardDefaults.colors(containerColor = MaterialTheme.colorScheme.surface),
     ) {
         Box(Modifier.fillMaxSize()) {
-            Box(
-                Modifier.fillMaxSize().background(
-                    Brush.radialGradient(
-                        colors = listOf(
-                            visual.accent.copy(alpha = if (focused) 0.55f else 0.32f),
-                            Color.Transparent,
-                        ),
-                        radius = 220f,
+            BoxWithConstraints(Modifier.fillMaxSize()) {
+                val glowRadius = with(LocalDensity.current) { maxWidth.toPx() } * 0.72f
+                Box(
+                    Modifier.fillMaxSize().background(
+                        Brush.radialGradient(
+                            colors = listOf(
+                                visual.accent.copy(alpha = if (focused) 0.55f else 0.32f),
+                                Color.Transparent,
+                            ),
+                            radius = glowRadius,
+                        )
                     )
                 )
-            )
+            }
             Column(
                 Modifier.fillMaxSize().padding(14.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
