@@ -65,11 +65,12 @@ fun HomeScreen(
     val keyboard = LocalSoftwareKeyboardController.current
 
     // Level-1 sections: special collections first, then one per console.
-    val sections: List<Pair<String, LibrarySection>> = buildList {
+    val collections: List<Pair<String, LibrarySection>> = buildList {
         add(stringResource(R.string.section_recommended) to LibrarySection.Recommended)
         add(stringResource(R.string.section_favorites) to LibrarySection.Favorites)
-        System.entries.forEach { add(it.displayName to LibrarySection.Console(it)) }
     }
+    val consoles: List<Pair<String, LibrarySection>> =
+        System.entries.map { it.displayName to LibrarySection.Console(it) }
 
     Column(
         Modifier.fillMaxSize().padding(40.dp).onPreviewKeyEvent { event ->
@@ -101,29 +102,25 @@ fun HomeScreen(
             when {
                 state.loading -> Text(stringResource(R.string.home_scanning), style = MaterialTheme.typography.bodyLarge)
                 else -> LazyVerticalGrid(
-                    columns = GridCells.Adaptive(160.dp),
+                    columns = GridCells.Adaptive(180.dp),
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                     modifier = Modifier.fillMaxSize(),
                 ) {
                     if (hasContinue) {
                         item(span = { GridItemSpan(maxLineSpan) }) {
-                            Column {
-                                Text(stringResource(R.string.home_continue_playing), style = MaterialTheme.typography.titleLarge)
-                                Spacer(Modifier.height(8.dp))
-                                LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                                    items(state.continuePlaying, key = { it.id }) { g ->
-                                        GameTile(game = g, onClick = { onOpenGame(g.id) },
-                                            requestInitialFocus = g == state.continuePlaying.first())
-                                    }
+                            RowHeader(stringResource(R.string.home_continue_playing))
+                        }
+                        item(span = { GridItemSpan(maxLineSpan) }) {
+                            LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                                items(state.continuePlaying, key = { it.id }) { g ->
+                                    GameTile(game = g, onClick = { onOpenGame(g.id) },
+                                        requestInitialFocus = g == state.continuePlaying.first())
                                 }
                             }
                         }
                     }
-                    item(span = { GridItemSpan(maxLineSpan) }) {
-                        Text(stringResource(R.string.home_consoles), style = MaterialTheme.typography.titleLarge)
-                    }
-                    itemsIndexed(sections) { i, (label, section) ->
+                    itemsIndexed(collections) { i, (label, section) ->
                         SectionTile(
                             label = label,
                             section = section,
@@ -131,11 +128,32 @@ fun HomeScreen(
                             requestInitialFocus = !hasContinue && i == 0,
                         )
                     }
+                    item(span = { GridItemSpan(maxLineSpan) }) {
+                        RowHeader(stringResource(R.string.home_consoles))
+                    }
+                    itemsIndexed(consoles) { _, (label, section) ->
+                        SectionTile(
+                            label = label,
+                            section = section,
+                            onClick = { onOpenSection(section) },
+                            requestInitialFocus = false,
+                        )
+                    }
                 }
             }
         }
         HomeControlLegend()
     }
+}
+
+@Composable
+private fun RowHeader(text: String) {
+    Text(
+        text,
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.onSurface,
+        modifier = Modifier.padding(start = 4.dp, top = 12.dp, bottom = 8.dp),
+    )
 }
 
 @OptIn(ExperimentalTvMaterial3Api::class)
