@@ -70,11 +70,11 @@ class LibraryRepository(
             val candidates = gameDao.getAll().filter { it.players == null && it.boxartName == null }
             val updates = candidates.mapNotNull { e ->
                 val meta = m.match(e.displayName, provider(e.system)) ?: return@mapNotNull null
-                MetaUpdate(e.id, meta.players, meta.boxart, meta.genre, meta.year)
+                MetaUpdate(e.id, meta.players, meta.boxart, meta.genre, meta.year, meta.description, meta.igdbCover)
             }
             if (updates.isNotEmpty()) {
                 runInTransaction {
-                    updates.forEach { u -> gameDao.updateMeta(u.id, u.players, u.boxart, u.genre, u.year) }
+                    updates.forEach { u -> gameDao.updateMeta(u.id, u.players, u.boxart, u.genre, u.year, u.description, u.igdbCover) }
                 }
             }
         }
@@ -124,5 +124,7 @@ class LibraryRepository(
         val boxart: String?,
         val genre: String?,
         val year: Int?,
+        val description: String?,
+        val igdbCover: String?,
     )
 }
