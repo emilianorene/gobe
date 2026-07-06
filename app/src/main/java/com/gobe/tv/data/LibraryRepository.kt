@@ -79,18 +79,21 @@ class LibraryRepository(
             }
         }
 
-        // Refresh `recommended` across ALL games (backfills already-scanned libraries; the candidate
-        // filter above only re-matches never-matched rows). Cheap in-memory match; writes on change.
+        // Refresh index-derived fields (recommended/description/igdbCover) across ALL games — backfills
+        // already-scanned libraries; the candidate filter above only touches never-matched rows.
         if (m != null && provider != null) {
-            val recoUpdates = recommendedBackfillUpdates(gameDao.getAll()) { e ->
+            val updates = indexExtrasBackfillUpdates(gameDao.getAll()) { e ->
                 val idx = provider(e.system)
-                // An empty index means the bundled asset failed to load — don't clear existing flags
-                // on a transient failure (unlike a real "no longer recommended" match).
-                if (idx.isEmpty()) e.recommended else m.match(e.displayName, idx)?.recommended ?: false
+                // Empty index = the bundled asset failed to load; keep existing values (no wipe).
+                if (idx.isEmpty()) IndexExtras(e.recommended, e.description, e.igdbCover)
+                else {
+                    val meta = m.match(e.displayName, idx)
+                    IndexExtras(meta?.recommended ?: false, meta?.description, meta?.igdbCover)
+                }
             }
-            if (recoUpdates.isNotEmpty()) {
+            if (updates.isNotEmpty()) {
                 runInTransaction {
-                    recoUpdates.forEach { (id, reco) -> gameDao.updateRecommended(id, reco) }
+                    updates.forEach { (id, x) -> gameDao.updateIndexExtras(id, x.recommended, x.description, x.igdbCover) }
                 }
             }
         }
@@ -116,6 +119,7 @@ class LibraryRepository(
         id, path, system, displayName, fileName, sizeBytes, lastPlayed, dateAdded,
         players = players, boxartName = boxartName, genre = genre, year = year,
         recommended = recommended, favorite = favorite,
+        description = description, igdbCover = igdbCover,
     )
 
     private data class MetaUpdate(
