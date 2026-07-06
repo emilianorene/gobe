@@ -19,12 +19,16 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.nativeKeyCode
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
@@ -122,6 +126,7 @@ fun HomeScreen(
                     itemsIndexed(sections) { i, (label, section) ->
                         SectionTile(
                             label = label,
+                            section = section,
                             onClick = { onOpenSection(section) },
                             requestInitialFocus = !hasContinue && i == 0,
                         )
@@ -135,17 +140,49 @@ fun HomeScreen(
 
 @OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
-private fun SectionTile(label: String, onClick: () -> Unit, requestInitialFocus: Boolean) {
+private fun SectionTile(
+    label: String,
+    section: LibrarySection,
+    onClick: () -> Unit,
+    requestInitialFocus: Boolean,
+) {
+    val visual = sectionVisual(section)
     val focus = remember { FocusRequester() }
+    var focused by remember { mutableStateOf(false) }
     if (requestInitialFocus) LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
     Card(
         onClick = onClick,
         modifier = (if (requestInitialFocus) Modifier.focusRequester(focus) else Modifier)
-            .height(96.dp).fillMaxWidth(),
+            .fillMaxWidth().aspectRatio(1.3f)
+            .onFocusChanged { focused = it.isFocused },
         colors = CardDefaults.colors(containerColor = MaterialTheme.colorScheme.surface),
     ) {
-        Box(Modifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.CenterStart) {
-            Text(label, style = MaterialTheme.typography.titleMedium)
+        Box(Modifier.fillMaxSize()) {
+            Box(
+                Modifier.fillMaxSize().background(
+                    Brush.radialGradient(
+                        colors = listOf(
+                            visual.accent.copy(alpha = if (focused) 0.55f else 0.32f),
+                            Color.Transparent,
+                        ),
+                        radius = 220f,
+                    )
+                )
+            )
+            Column(
+                Modifier.fillMaxSize().padding(14.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                Image(
+                    painter = painterResource(visual.iconRes),
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.fillMaxWidth(0.72f).weight(1f),
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(label, style = MaterialTheme.typography.titleMedium, maxLines = 1)
+            }
         }
     }
 }
