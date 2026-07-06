@@ -69,7 +69,7 @@ class GameDaoTest {
                 fileName="x.sfc", sizeBytes=1, dateAdded=1L),
         ))
         val g = dao.getAll().first()
-        dao.updateMeta(g.id, players = 2, boxartName = "Super Mario World", genre = "Platform", year = 1991)
+        dao.updateMeta(g.id, players = 2, boxartName = "Super Mario World", genre = "Platform", year = 1991, description = null, igdbCover = null)
         val hits = dao.searchGames("Mario", System.SNES.name, null, 0, 0, 0).first()
         assertEquals(1, hits.size)
         assertEquals(2, hits[0].players)
@@ -150,5 +150,15 @@ class GameDaoTest {
         assertEquals(listOf("Alpha", "NoYear", "Zeta"), dao.searchGames("", null, null, 0, 0, 1).first().map { it.displayName })
         // YEAR (mode 2): newest first, unknown year last
         assertEquals(listOf("Alpha", "Zeta", "NoYear"), dao.searchGames("", null, null, 0, 0, 2).first().map { it.displayName })
+    }
+
+    @Test fun updateIndexExtrasWrites() = runBlocking {
+        dao.insertAll(listOf(GameEntity(path = "/a", system = System.SNES, displayName = "Alpha", fileName = "a", sizeBytes = 1, dateAdded = 1L)))
+        val a = dao.getAll().first()
+        dao.updateIndexExtras(a.id, recommended = true, description = "A great game.", igdbCover = "co999")
+        val row = dao.getById(a.id)!!
+        assertEquals(true, row.recommended)
+        assertEquals("A great game.", row.description)
+        assertEquals("co999", row.igdbCover)
     }
 }

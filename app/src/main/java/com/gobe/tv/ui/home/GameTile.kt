@@ -37,10 +37,8 @@ import coil.compose.AsyncImagePainter
 import coil.compose.SubcomposeAsyncImage
 import coil.compose.SubcomposeAsyncImageContent
 import com.gobe.tv.R
-import com.gobe.tv.data.art.BoxartUrlBuilder
+import com.gobe.tv.data.art.coverUrl
 import com.gobe.tv.domain.Game
-
-private val boxartUrlBuilder = BoxartUrlBuilder()
 
 /** Tile caption: game name, plus " (year)" when a real year is known. Pure for unit testing. */
 fun tileCaption(name: String, year: Int?): String =
@@ -62,7 +60,7 @@ fun GameTile(
         LaunchedEffect(Unit) { runCatching { focusRequester.requestFocus() } }
     }
     val focusModifier = if (requestInitialFocus) Modifier.focusRequester(focusRequester) else Modifier
-    val url = boxartUrlBuilder.url(game.system, game.boxartName ?: game.displayName)
+    val url = coverUrl(game)
 
     Column(
         modifier = modifier.then(focusModifier).width(132.dp),

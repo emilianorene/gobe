@@ -35,8 +35,11 @@ interface GameDao {
     @Query("SELECT * FROM games WHERE displayName LIKE '%' || :q || '%' AND (:system IS NULL OR system = :system) AND (:genre IS NULL OR genre = :genre) AND (:recommendedOnly = 0 OR recommended = 1) AND (:favoritesOnly = 0 OR favorite = 1) ORDER BY CASE WHEN :sortMode = 0 THEN recommended ELSE 0 END DESC, CASE WHEN :sortMode = 2 THEN year END DESC, displayName COLLATE NOCASE ASC")
     fun searchGames(q: String, system: String?, genre: String?, recommendedOnly: Int, favoritesOnly: Int, sortMode: Int): Flow<List<GameEntity>>
 
-    @Query("UPDATE games SET players = :players, boxartName = :boxartName, genre = :genre, year = :year WHERE id = :id")
-    suspend fun updateMeta(id: Long, players: Int?, boxartName: String?, genre: String?, year: Int?)
+    @Query("UPDATE games SET players = :players, boxartName = :boxartName, genre = :genre, year = :year, description = :description, igdbCover = :igdbCover WHERE id = :id")
+    suspend fun updateMeta(id: Long, players: Int?, boxartName: String?, genre: String?, year: Int?, description: String?, igdbCover: String?)
+
+    @Query("UPDATE games SET recommended = :recommended, description = :description, igdbCover = :igdbCover WHERE id = :id")
+    suspend fun updateIndexExtras(id: Long, recommended: Boolean, description: String?, igdbCover: String?)
 
     @Query("UPDATE games SET recommended = :recommended WHERE id = :id")
     suspend fun updateRecommended(id: Long, recommended: Boolean)

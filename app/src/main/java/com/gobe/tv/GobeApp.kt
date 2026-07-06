@@ -39,7 +39,7 @@ class GobeApp : Application() {
     override fun onCreate() {
         super.onCreate()
         val db = Room.databaseBuilder(this, GobeDatabase::class.java, "gobe.db")
-            .addMigrations(GobeDatabase.MIGRATION_1_2, GobeDatabase.MIGRATION_2_3, GobeDatabase.MIGRATION_3_4, GobeDatabase.MIGRATION_4_5)
+            .addMigrations(GobeDatabase.MIGRATION_1_2, GobeDatabase.MIGRATION_2_3, GobeDatabase.MIGRATION_3_4, GobeDatabase.MIGRATION_4_5, GobeDatabase.MIGRATION_5_6)
             .build()
         val scanner = RomScanner(SystemDetector(), NameCleaner())
         repository = LibraryRepository(

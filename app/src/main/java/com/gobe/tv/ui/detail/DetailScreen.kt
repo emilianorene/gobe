@@ -26,7 +26,7 @@ import coil.compose.SubcomposeAsyncImage
 import coil.compose.SubcomposeAsyncImageContent
 import com.gobe.tv.GobeApp
 import com.gobe.tv.R
-import com.gobe.tv.data.art.BoxartUrlBuilder
+import com.gobe.tv.data.art.coverUrl
 import com.gobe.tv.domain.Game
 import com.gobe.tv.emulation.EmulatorActivity
 import com.gobe.tv.emulation.EmulatorArgs
@@ -137,6 +137,16 @@ fun DetailScreen(app: GobeApp, gameId: Long, onBack: () -> Unit) {
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurface,
                     )
+                    if (!g.description.isNullOrBlank()) {
+                        Spacer(Modifier.height(12.dp))
+                        Text(
+                            g.description!!,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 8,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                        )
+                    }
                     Spacer(Modifier.height(32.dp))
                     if (playable) {
                         Button(
@@ -170,7 +180,7 @@ fun DetailScreen(app: GobeApp, gameId: Long, onBack: () -> Unit) {
 @Composable
 private fun CoverArt(game: Game) {
     val shape = RoundedCornerShape(12.dp)
-    val url = BoxartUrlBuilder().url(game.system, game.boxartName ?: game.displayName)
+    val url = coverUrl(game)
     Box(
         modifier = Modifier
             .width(220.dp)
