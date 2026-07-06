@@ -1,0 +1,19 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp" android:height="74dp" android:viewportWidth="100" android:viewportHeight="62">
+    <!-- Panel -->
+    <path android:fillColor="#2A2E36" android:strokeColor="#15181E" android:strokeWidth="1.5"
+        android:pathData="M14,24 H86 a6,6 0 0 1 6,6 V50 a6,6 0 0 1 -6,6 H14 a6,6 0 0 1 -6,-6 V30 a6,6 0 0 1 6,-6 z"/>
+    <!-- Joystick base shadow -->
+    <path android:fillColor="#15181E" android:pathData="M15,52 a12,4 0 1 0 24,0 a12,4 0 1 0 -24,0 z"/>
+    <!-- Joystick shaft -->
+    <path android:fillColor="#4A4F5A" android:pathData="M25,30 H29 V50 H25 z"/>
+    <!-- Joystick ball -->
+    <path android:fillColor="#D84A3A" android:strokeColor="#A02A1A" android:strokeWidth="1.5"
+        android:pathData="M19.5,26 a7.5,7.5 0 1 0 15,0 a7.5,7.5 0 1 0 -15,0 z"/>
+    <!-- Buttons -->
+    <path android:fillColor="#E0C23A" android:pathData="M47,38 a5,5 0 1 0 10,0 a5,5 0 1 0 -10,0 z"/>
+    <path android:fillColor="#D84A3A" android:pathData="M61,35 a5,5 0 1 0 10,0 a5,5 0 1 0 -10,0 z"/>
+    <path android:fillColor="#4CAF50" android:pathData="M75,38 a5,5 0 1 0 10,0 a5,5 0 1 0 -10,0 z"/>
+    <path android:fillColor="#2E6FD6" android:pathData="M54,49 a5,5 0 1 0 10,0 a5,5 0 1 0 -10,0 z"/>
+    <path android:fillColor="#D84EA0" android:pathData="M68,49 a5,5 0 1 0 10,0 a5,5 0 1 0 -10,0 z"/>
+</vector>

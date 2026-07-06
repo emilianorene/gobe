@@ -1,0 +1,31 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp" android:height="77dp" android:viewportWidth="100" android:viewportHeight="64">
+    <!-- Center prong -->
+    <path android:fillColor="#CDD0D8" android:strokeColor="#A9ADB8" android:strokeWidth="1.5"
+        android:pathData="M49,14 H51 a7,7 0 0 1 7,7 V39 a7,7 0 0 1 -7,7 H49 a7,7 0 0 1 -7,-7 V21 a7,7 0 0 1 7,-7 z"/>
+    <!-- Left prong -->
+    <group android:name="left_prong" android:pivotX="44" android:pivotY="33" android:rotation="19">
+        <path android:fillColor="#CDD0D8" android:strokeColor="#A9ADB8" android:strokeWidth="1.5"
+            android:pathData="M15.5,27 H37.5 a6.5,6.5 0 0 1 6.5,6.5 a6.5,6.5 0 0 1 -6.5,6.5 H15.5 a6.5,6.5 0 0 1 -6.5,-6.5 a6.5,6.5 0 0 1 6.5,-6.5 z"/>
+    </group>
+    <!-- Right prong -->
+    <group android:name="right_prong" android:pivotX="56" android:pivotY="33" android:rotation="-19">
+        <path android:fillColor="#CDD0D8" android:strokeColor="#A9ADB8" android:strokeWidth="1.5"
+            android:pathData="M62.5,27 H84.5 a6.5,6.5 0 0 1 6.5,6.5 a6.5,6.5 0 0 1 -6.5,6.5 H62.5 a6.5,6.5 0 0 1 -6.5,-6.5 a6.5,6.5 0 0 1 6.5,-6.5 z"/>
+    </group>
+    <!-- Analog stick -->
+    <path android:fillColor="#3A3F4A" android:pathData="M45,21 a5,5 0 1 0 10,0 a5,5 0 1 0 -10,0 z"/>
+    <path android:fillColor="#7B7F8A" android:pathData="M48,21 a2,2 0 1 0 4,0 a2,2 0 1 0 -4,0 z"/>
+    <!-- D-pad on left prong -->
+    <path android:fillColor="#2A2E36"
+        android:pathData="M18,31 H26 a1,1 0 0 1 1,1 V33.5 a1,1 0 0 1 -1,1 H18 a1,1 0 0 1 -1,-1 V32 a1,1 0 0 1 1,-1 z"/>
+    <path android:fillColor="#2A2E36"
+        android:pathData="M21.75,27.25 H23.25 a1,1 0 0 1 1,1 V37.25 a1,1 0 0 1 -1,1 H21.75 a1,1 0 0 1 -1,-1 V28.25 a1,1 0 0 1 1,-1 z"/>
+    <!-- C-buttons (yellow) -->
+    <path android:fillColor="#E0C23A" android:pathData="M72.7,27 a2.3,2.3 0 1 0 4.6,0 a2.3,2.3 0 1 0 -4.6,0 z"/>
+    <path android:fillColor="#E0C23A" android:pathData="M78.7,31 a2.3,2.3 0 1 0 4.6,0 a2.3,2.3 0 1 0 -4.6,0 z"/>
+    <path android:fillColor="#E0C23A" android:pathData="M72.7,35 a2.3,2.3 0 1 0 4.6,0 a2.3,2.3 0 1 0 -4.6,0 z"/>
+    <path android:fillColor="#E0C23A" android:pathData="M66.7,31 a2.3,2.3 0 1 0 4.6,0 a2.3,2.3 0 1 0 -4.6,0 z"/>
+    <!-- A button (blue) -->
+    <path android:fillColor="#2E6FD6" android:pathData="M56.8,41 a3.2,3.2 0 1 0 6.4,0 a3.2,3.2 0 1 0 -6.4,0 z"/>
+</vector>

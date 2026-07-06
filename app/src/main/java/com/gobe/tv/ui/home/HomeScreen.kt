@@ -19,12 +19,17 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.nativeKeyCode
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
@@ -61,11 +66,12 @@ fun HomeScreen(
     val keyboard = LocalSoftwareKeyboardController.current
 
     // Level-1 sections: special collections first, then one per console.
-    val sections: List<Pair<String, LibrarySection>> = buildList {
+    val collections: List<Pair<String, LibrarySection>> = buildList {
         add(stringResource(R.string.section_recommended) to LibrarySection.Recommended)
         add(stringResource(R.string.section_favorites) to LibrarySection.Favorites)
-        System.entries.forEach { add(it.displayName to LibrarySection.Console(it)) }
     }
+    val consoles: List<Pair<String, LibrarySection>> =
+        System.entries.map { it.displayName to LibrarySection.Console(it) }
 
     Column(
         Modifier.fillMaxSize().padding(40.dp).onPreviewKeyEvent { event ->
@@ -97,33 +103,41 @@ fun HomeScreen(
             when {
                 state.loading -> Text(stringResource(R.string.home_scanning), style = MaterialTheme.typography.bodyLarge)
                 else -> LazyVerticalGrid(
-                    columns = GridCells.Adaptive(160.dp),
+                    columns = GridCells.Adaptive(180.dp),
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                     modifier = Modifier.fillMaxSize(),
                 ) {
                     if (hasContinue) {
                         item(span = { GridItemSpan(maxLineSpan) }) {
-                            Column {
-                                Text(stringResource(R.string.home_continue_playing), style = MaterialTheme.typography.titleLarge)
-                                Spacer(Modifier.height(8.dp))
-                                LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                                    items(state.continuePlaying, key = { it.id }) { g ->
-                                        GameTile(game = g, onClick = { onOpenGame(g.id) },
-                                            requestInitialFocus = g == state.continuePlaying.first())
-                                    }
+                            RowHeader(stringResource(R.string.home_continue_playing))
+                        }
+                        item(span = { GridItemSpan(maxLineSpan) }) {
+                            LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                                items(state.continuePlaying, key = { it.id }) { g ->
+                                    GameTile(game = g, onClick = { onOpenGame(g.id) },
+                                        requestInitialFocus = g == state.continuePlaying.first())
                                 }
                             }
                         }
                     }
-                    item(span = { GridItemSpan(maxLineSpan) }) {
-                        Text(stringResource(R.string.home_consoles), style = MaterialTheme.typography.titleLarge)
-                    }
-                    itemsIndexed(sections) { i, (label, section) ->
+                    itemsIndexed(collections) { i, (label, section) ->
                         SectionTile(
                             label = label,
+                            section = section,
                             onClick = { onOpenSection(section) },
                             requestInitialFocus = !hasContinue && i == 0,
+                        )
+                    }
+                    item(span = { GridItemSpan(maxLineSpan) }) {
+                        RowHeader(stringResource(R.string.home_consoles))
+                    }
+                    itemsIndexed(consoles) { _, (label, section) ->
+                        SectionTile(
+                            label = label,
+                            section = section,
+                            onClick = { onOpenSection(section) },
+                            requestInitialFocus = false,
                         )
                     }
                 }
@@ -133,19 +147,64 @@ fun HomeScreen(
     }
 }
 
+@Composable
+private fun RowHeader(text: String) {
+    Text(
+        text,
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.onSurface,
+        modifier = Modifier.padding(start = 4.dp, top = 12.dp, bottom = 8.dp),
+    )
+}
+
 @OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
-private fun SectionTile(label: String, onClick: () -> Unit, requestInitialFocus: Boolean) {
+private fun SectionTile(
+    label: String,
+    section: LibrarySection,
+    onClick: () -> Unit,
+    requestInitialFocus: Boolean,
+) {
+    val visual = sectionVisual(section)
     val focus = remember { FocusRequester() }
+    var focused by remember { mutableStateOf(false) }
     if (requestInitialFocus) LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
     Card(
         onClick = onClick,
         modifier = (if (requestInitialFocus) Modifier.focusRequester(focus) else Modifier)
-            .height(96.dp).fillMaxWidth(),
+            .fillMaxWidth().aspectRatio(1.3f)
+            .onFocusChanged { focused = it.isFocused },
         colors = CardDefaults.colors(containerColor = MaterialTheme.colorScheme.surface),
     ) {
-        Box(Modifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.CenterStart) {
-            Text(label, style = MaterialTheme.typography.titleMedium)
+        Box(Modifier.fillMaxSize()) {
+            BoxWithConstraints(Modifier.fillMaxSize()) {
+                val glowRadius = with(LocalDensity.current) { maxWidth.toPx() } * 0.72f
+                Box(
+                    Modifier.fillMaxSize().background(
+                        Brush.radialGradient(
+                            colors = listOf(
+                                visual.accent.copy(alpha = if (focused) 0.55f else 0.32f),
+                                Color.Transparent,
+                            ),
+                            radius = glowRadius,
+                        )
+                    )
+                )
+            }
+            Column(
+                Modifier.fillMaxSize().padding(14.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                Image(
+                    painter = painterResource(visual.iconRes),
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.fillMaxWidth(0.72f).weight(1f),
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(label, style = MaterialTheme.typography.titleMedium, maxLines = 1)
+            }
         }
     }
 }
