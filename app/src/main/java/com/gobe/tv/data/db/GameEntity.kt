@@ -21,4 +21,6 @@ data class GameEntity(
     val year: Int? = null,
     val recommended: Boolean = false,
     val favorite: Boolean = false,
+    val description: String? = null,
+    val igdbCover: String? = null,
 )
