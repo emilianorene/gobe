@@ -11,6 +11,26 @@ Each released `app-release.apk` is attached to its tag on the
 
 _Nothing yet._
 
+## [0.3.0-beta] — 2026-07-06
+
+**Library & content** — make a large collection pleasant to browse.
+
+### Added
+
+- **Console-first Home** — a two-level layout: pick a collection or console, then browse its games.
+  Level-1 sections are **Recommended**, **Favorites**, and one per console; level-2 is the game
+  library with a genre filter and sort. Back navigation returns to the sections.
+- **Console tiles with controller art** — each Home section is now a **Hero card**: the console's
+  controller (NES pad, SNES pad, N64 trident, arcade stick) on a per-console color glow, with
+  Recommended (★) and Favorites (♥) in the same style.
+- **Recommended games** — a ★ badge and a Recommended collection highlight highly-rated titles
+  (derived from IGDB ratings, baked into the bundled metadata; no on-device network needed).
+- **Favorites** — mark any game with ♥ from its detail screen; a Favorites collection gathers them.
+- **Sort options** — order a library by **Recommended**, **Title**, or **Year**.
+- **Richer metadata** — game **descriptions** (for recommended titles) on the detail screen, and an
+  **IGDB cover** fallback so games without libretro box art still show real cover art instead of the
+  placeholder. Both baked into the metadata index from IGDB.
+
 ## [0.2.0-beta] — 2026-07-02
 
 Controller & input polish, and a big compatibility fix so Gobe installs on far more devices.

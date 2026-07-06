@@ -3,7 +3,24 @@
 A living plan for where Gobe is headed. Dates are directional, not commitments — this is a personal
 project. Items graduate to the [CHANGELOG](CHANGELOG.md) as they ship.
 
-## ✅ v0.2.0-beta — _current_
+## ✅ v0.3.0-beta — _current_ — Library & content
+
+Make a large collection pleasant to browse.
+
+- **Console-first Home** — a two-level layout (collection/console → game library); level-1 sections
+  are Recommended, Favorites, and one per console. Absorbs the old "per-system landing" idea.
+- **Console tiles with controller art** — Home sections are Hero cards showing each console's
+  controller on a per-console color glow (★ Recommended / ♥ Favorites in the same style).
+- **Recommended games** — ★ badge + Recommended collection from IGDB ratings (baked in, no network).
+- **Favorites** — ♥ toggle on the detail screen + a Favorites collection.
+- **Sort options** — Recommended / Title / Year.
+- **Richer metadata** — descriptions (recommended titles) + an IGDB cover fallback for games missing
+  libretro box art.
+
+Still open from the original v0.3 wishlist: **manual art override** for mismatched games, and
+last-played / most-played sort — moved to a later release / the backlog.
+
+## ✅ v0.2.0-beta
 
 Controller & input polish, plus much wider device support.
 
@@ -21,15 +38,14 @@ The first public, playable build. Emulation (SNES / Arcade / NES-FDS), a box-art
 search + genre/system filters, save states, and full controller configuration (player assignment,
 A/B–X/Y swaps, capture remapping). Signed releases with in-place updates.
 
-## 🚀 v0.3 — Library & content
+## 🚀 Next — Library polish
 
-Make a large collection pleasant to browse.
+Follow-ups from the v0.3 wishlist not yet shipped.
 
-- **Favorites / recently added** rows on the home screen.
-- **Richer metadata**: descriptions, developer/publisher, and higher-quality art matching.
 - **Manual art override** for games the scanner mismatches.
-- **Sort options** (title / year / last played / most played).
-- **Per-system landing** views.
+- **More sort options** (last played / most played).
+- **Recently added** row on the home screen.
+- **Developer/publisher** in metadata.
 
 ## 🔮 v1.0 — Stable & broader
 
