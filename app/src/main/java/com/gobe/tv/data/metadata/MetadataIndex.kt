@@ -8,6 +8,8 @@ data class GameMeta(
     val genre: String? = null,
     val year: Int? = null,
     val recommended: Boolean = false,
+    val description: String? = null,
+    val igdbCover: String? = null,
 )
 
 class MetadataIndex(private val map: Map<String, GameMeta>) {
@@ -25,6 +27,8 @@ class MetadataIndex(private val map: Map<String, GameMeta>) {
                     genre = o.optString("genre").ifBlank { null },
                     year = if (o.has("year")) o.optInt("year") else null,
                     recommended = o.optBoolean("recommended", false),
+                    description = o.optString("description").ifBlank { null },
+                    igdbCover = o.optString("igdbCover").ifBlank { null },
                 )
             }
             return MetadataIndex(m)
