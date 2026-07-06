@@ -19,6 +19,10 @@ IGDB_SECRET env vars (free, from a Twitch dev app) — maintainer-side only; if 
 skipped and the index builds without the flag. Run `build.py --self-test` to check the policy (no
 network).
 
+The same IGDB pass also pulls `summary` and `cover.image_id`: `igdbCover` is baked in for ANY
+rated game that has a cover (not just recommended ones), while `description` (from `summary`) is
+baked in only for recommended games, to keep the index small.
+
 Requires: msgpack (python3 -m venv venv && venv/bin/pip install msgpack)
 Run:      venv/bin/python tools/build-metadata-index/build.py
 Uses the unauthenticated GitHub API (4 tree calls, well under the 60/hr limit).
@@ -197,15 +201,21 @@ def igdb_token(client_id: str, secret: str) -> str:
         return json.loads(r.read())["access_token"]
 
 
-def igdb_recommended(tag: str, client_id: str, token: str) -> set:
-    """Return the set of normalized keys recommended for this system, or empty on any failure."""
+def igdb_data(tag: str, client_id: str, token: str):
+    """Return (recommended: set of normalized keys, extras: dict[key -> {"cover": id|None,
+    "summary": str|None}]) for this system, or (set(), {}) on any failure.
+
+    `extras` covers every rated game returned by IGDB (not just recommended ones), so callers
+    can bake `igdbCover` broadly while reserving `description` for the recommended subset.
+    """
     platform = IGDB_PLATFORM.get(tag)
     if platform is None:
-        return set()
+        return set(), {}
     best: dict[str, tuple[float, int]] = {}  # key -> (rating, votes)
+    extras: dict[str, dict] = {}
     offset = 0
     while True:
-        q = (f"fields name,total_rating,total_rating_count; "
+        q = (f"fields name,total_rating,total_rating_count,summary,cover.image_id; "
              f"where platforms = ({platform}) & total_rating != null & total_rating_count >= 5; "
              f"sort total_rating desc; limit 500; offset {offset};")
         req = urllib.request.Request(
@@ -217,7 +227,7 @@ def igdb_recommended(tag: str, client_id: str, token: str) -> set:
             rows = json.loads(get_with(req))
         except Exception as e:
             print(f"  !! IGDB {tag} failed: {e}", file=sys.stderr)
-            return set()
+            return set(), {}
         if not rows:
             break
         for row in rows:
@@ -229,12 +239,17 @@ def igdb_recommended(tag: str, client_id: str, token: str) -> set:
             prev = best.get(key)
             if prev is None or (rating or 0) > prev[0]:
                 best[key] = (rating or 0, votes or 0)
+                extras[key] = {
+                    "cover": (row.get("cover") or {}).get("image_id"),
+                    "summary": row.get("summary"),
+                }
         offset += 500
         if len(rows) < 500:
             break
     recommended = select_recommended((k, r, v) for k, (r, v) in best.items())
-    print(f"  {tag}: IGDB recommended = {len(recommended)}", flush=True)
-    return recommended
+    print(f"  {tag}: IGDB recommended = {len(recommended)}, "
+          f"covers = {sum(1 for e in extras.values() if e['cover'])}", flush=True)
+    return recommended, extras
 
 
 def main():
@@ -275,10 +290,18 @@ def main():
                     meta["year"] = r["year"]
             if meta:
                 index[k] = meta
-        # Merge the IGDB-derived recommended flag (tag even games without boxart/players).
+        # Merge the IGDB-derived recommended flag, cover, and description (tag even games
+        # without boxart/players). igdbCover applies to any rated game with a cover; description
+        # is reserved for recommended games only, to keep the index small.
         if igdb_tok:
-            for key in igdb_recommended(tag, client_id, igdb_tok):
+            recommended, extras = igdb_data(tag, client_id, igdb_tok)
+            for key in recommended:
                 index.setdefault(key, {})["recommended"] = True
+            for key, ex in extras.items():
+                if ex.get("cover"):
+                    index.setdefault(key, {})["igdbCover"] = ex["cover"]
+                if key in recommended and ex.get("summary"):
+                    index.setdefault(key, {})["description"] = ex["summary"]
         path = os.path.join(out_dir, f"{tag}.json")
         with open(path, "w", encoding="utf-8") as f:
             json.dump(index, f, ensure_ascii=False, separators=(",", ":"))
