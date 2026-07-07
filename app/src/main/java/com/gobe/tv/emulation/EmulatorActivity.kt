@@ -30,13 +30,14 @@ import com.gobe.tv.emulation.input.MenuHotkey
 import com.gobe.tv.emulation.input.applyDeadzone
 import com.gobe.tv.emulation.input.applyMapping
 import com.gobe.tv.emulation.input.isHotkeyCombo
-import com.gobe.tv.emulation.input.nextDisk
+import com.gobe.tv.emulation.input.isFdsGame
 import com.gobe.tv.emulation.input.portForDevice
 import com.gobe.tv.i18n.LocaleManager
 import com.gobe.tv.emulation.ui.PauseOverlay
 import com.gobe.tv.ui.theme.GobeTheme
 import com.swordfish.libretrodroid.GLRetroView
 import com.swordfish.libretrodroid.GLRetroViewData
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -57,8 +58,9 @@ class EmulatorActivity : ComponentActivity() {
     // Shown briefly at launch to teach the menu combo; hidden after a delay AND permanently once
     // the menu has been opened (so it never returns on resume).
     private var showControlsHint by mutableStateOf(true)
-    private var diskCount by mutableStateOf(0)
-    private var currentDisk by mutableStateOf(0)
+
+    /** FDS games get a "change disk" action (driven by RetroPad L/R button presses). */
+    private val isFds: Boolean get() = isFdsGame(args.system, args.romPath)
 
     private var coreReadyHandled = false
     private var loadErrorHandled = false
@@ -137,9 +139,8 @@ class EmulatorActivity : ComponentActivity() {
                             onSave = ::saveState,
                             onLoad = ::loadState,
                             onExit = ::exitToMenu,
-                            diskCount = diskCount,
-                            currentDisk = currentDisk,
-                            onChangeDisk = ::changeDisk,
+                            showChangeDisk = isFds,
+                            onChangeDisk = ::changeDiskFds,
                         )
                     }
                     if (showControlsHint && !paused) {
@@ -181,10 +182,6 @@ class EmulatorActivity : ComponentActivity() {
     private fun onCoreReady() {
         lifecycleScope.launch {
             runCatching { (application as GobeApp).repository.updateLastPlayed(args.gameId) }
-        }
-        retroView?.let { v ->
-            diskCount = runCatching { v.getAvailableDisks() }.getOrDefault(0)
-            currentDisk = runCatching { v.getCurrentDisk() }.getOrDefault(0)
         }
         if (args.loadState) loadState()
     }
@@ -231,13 +228,29 @@ class EmulatorActivity : ComponentActivity() {
         finish()
     }
 
-    private fun changeDisk() {
+    /**
+     * Flip an FDS disk. fceumm exposes no disk-control interface for FDS — it maps disk ops to
+     * RetroPad buttons (edge-triggered): **R** = insert/eject, **L** = change side. So we resume the
+     * core (it must run frames to see the button edges) and inject eject → change-side → insert.
+     */
+    private fun changeDiskFds() {
         val v = retroView ?: return
-        if (diskCount <= 1) return
-        val next = nextDisk(currentDisk, diskCount)
-        runCatching { v.changeDisk(next) }
-        currentDisk = next
-        toast(getString(R.string.emu_disk_changed, next + 1))
+        resume() // closes the overlay; the core must be running to register the button edges
+        toast(getString(R.string.emu_disk_flipping))
+        lifecycleScope.launch {
+            pressCoreButton(v, KeyEvent.KEYCODE_BUTTON_R1) // eject the current side
+            pressCoreButton(v, KeyEvent.KEYCODE_BUTTON_L1) // advance to the next side
+            pressCoreButton(v, KeyEvent.KEYCODE_BUTTON_R1) // insert it
+        }
+    }
+
+    /** Tap a RetroPad button on port 0: hold long enough for the core to poll the rising edge, then
+     *  release, with a gap so the FDS mechanism settles before the next op. */
+    private suspend fun pressCoreButton(v: GLRetroView, keyCode: Int) {
+        v.sendKeyEvent(KeyEvent.ACTION_DOWN, keyCode, 0)
+        delay(120)
+        v.sendKeyEvent(KeyEvent.ACTION_UP, keyCode, 0)
+        delay(350)
     }
 
     private fun autoSave() {

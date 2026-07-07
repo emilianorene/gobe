@@ -33,8 +33,7 @@ fun PauseOverlay(
     onSave: () -> Unit,
     onLoad: () -> Unit,
     onExit: () -> Unit,
-    diskCount: Int,
-    currentDisk: Int,
+    showChangeDisk: Boolean,
     onChangeDisk: () -> Unit,
 ) {
     val resumeFocus = remember { FocusRequester() }
@@ -63,9 +62,9 @@ fun PauseOverlay(
 
         Button(onClick = onExit, modifier = Modifier.width(320.dp)) { Text("🏠  " + stringResource(R.string.pause_exit_to_gobe)) }
 
-        if (diskCount > 1) {
+        if (showChangeDisk) {
             Button(onClick = onChangeDisk, modifier = Modifier.width(320.dp)) {
-                Text("💿  " + stringResource(R.string.pause_change_disk, currentDisk + 1, diskCount))
+                Text("💿  " + stringResource(R.string.pause_change_disk))
             }
         }
 
