@@ -94,6 +94,21 @@ All under `app/src/main/java/com/gobe/tv/ui/`.
 - `LibraryViewModel` is **unchanged** — it already exposes `games`, `genres`, `selectedGenre`,
   `sortMode`, `setGenre()`, `cycleSort()`. No new reactive state needed.
 
+### Implementation notes (from spec review)
+- **`CoverArt` (DetailScreen) and `DefaultCover` (GameTile) are currently `private`.** They are not
+  drop-in reusable — the plan must extract them (or relax visibility) into a shared location so both
+  `GameRow` and `GameDetailPanel` can use them. Not a new behavior, just a refactor step.
+- **`LibraryScreen` owns the shared `launch(loadState)` function** and feeds it to *both* the rail
+  row's `A`-press (`launch(false)`) and the panel's `onPlay`/`onResume` callbacks. `GameDetailPanel`
+  stays **presentational** (logic passed in via callbacks, not owned) — this reconciles "logic in one
+  place" with the callback parameterization.
+- **Legend text via `stringResource`** (not a hardcoded string), matching the existing
+  `HomeControlLegend` pattern; add the needed string resources.
+- **Favorite badge freshness:** toggling favorite in the panel should update the rail row's ♥ badge
+  live. This works if `repo.searchGames(...)` is a Room-backed reactive flow that re-emits on the
+  `favorite` column write (it is — same mechanism as the current library list). The plan should
+  verify the row re-composes after a favorite toggle.
+
 ## Data flow
 
 1. `LibraryScreen` collects `games`, `genres`, `selectedGenre`, `sortMode` from `LibraryViewModel`
