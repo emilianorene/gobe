@@ -210,6 +210,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import coil.compose.AsyncImagePainter
@@ -220,6 +222,7 @@ import com.gobe.tv.data.art.coverUrl
 import com.gobe.tv.domain.Game
 
 /** Cover art for a game: loads coverUrl(), falling back to a branded placeholder. Fills its box. */
+@OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
 fun GameCover(game: Game, modifier: Modifier = Modifier, contentScale: ContentScale = ContentScale.Fit) {
     val url = coverUrl(game)
@@ -241,6 +244,7 @@ fun GameCover(game: Game, modifier: Modifier = Modifier, contentScale: ContentSc
 }
 
 /** Branded placeholder cover for games without box art (Gobe logo watermark + title/system). */
+@OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
 private fun DefaultCover(game: Game) {
     Box(
@@ -268,7 +272,6 @@ private fun DefaultCover(game: Game) {
     }
 }
 ```
-(Add the missing `androidx.compose.ui.unit.dp` import.)
 
 - [ ] **Step 2: Refactor `GameTile.kt` to use `GameCover`**
 
@@ -430,7 +433,8 @@ Structure:
 - `fun launch(loadState: Boolean)` — identical to `DetailScreen.launch`, using `focused`.
 - Layout: `Column(padding(40.dp))` →
   - top bar `Row`: section title + `"· ${games.size}"` + Sort button (`vm.cycleSort()`, existing label) + genre chips `LazyRow` (existing logic).
-  - `Row(weight(1f))`: LEFT `LazyColumn(Modifier.weight(0.4f), state = listState)` of `GameRow(game, onClick = { focusedId = game.id; launch(false) }, onFocused = { focusedId = game.id }, requestInitialFocus = index == 0)`; RIGHT `GameDetailPanel(game = focused, …, onPlay = { launch(false) }, onResume = { launch(true) }, onToggleFavorite = { toggle }, favorite = favorite, modifier = Modifier.weight(0.6f))` — render an empty-state Text when `focused == null`.
+  - `Row(weight(1f))`: LEFT `LazyColumn(Modifier.weight(0.4f), state = listState)` of `GameRow(game, onClick = { focusedId = game.id; launch(false) }, onFocused = { focusedId = game.id }, requestInitialFocus = index == 0)`; RIGHT — `GameDetailPanel` takes a non-null `game: Game`, so null-guard `focused` explicitly:
+    `if (focused != null) GameDetailPanel(game = focused, playable = playable, hasState = hasState, onPlay = { launch(false) }, onResume = { launch(true) }, onToggleFavorite = { toggle }, favorite = favorite, modifier = Modifier.weight(0.6f)) else Box(Modifier.weight(0.6f)) { Text(stringResource(R.string.library_empty)) }`.
   - bottom: `LibraryControlLegend()` → `Ⓐ {legend_play} · Ⓑ {legend_back} · ▶ {legend_actions} · L1/R1 {legend_page}` via `stringResource`.
 - `onPreviewKeyEvent` on the outer `Column`: on `KeyDown`, `keyToLibraryAction(event.key.nativeKeyCode)` → `PagePrev`/`PageNext` → `scope.launch { listState.scrollToItem((listState.firstVisibleItemIndex ± visibleCount).coerceIn(0, games.lastIndex)) }` where `visibleCount = listState.layoutInfo.visibleItemsInfo.size.coerceAtLeast(1)`. Return true only when an action matched.
 - Keep `BackHandler { onBack() }`.
