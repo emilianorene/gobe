@@ -1,6 +1,5 @@
 package com.gobe.tv.ui.home
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,14 +16,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -33,12 +28,8 @@ import androidx.tv.material3.CardDefaults
 import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
-import coil.compose.AsyncImagePainter
-import coil.compose.SubcomposeAsyncImage
-import coil.compose.SubcomposeAsyncImageContent
-import com.gobe.tv.R
-import com.gobe.tv.data.art.coverUrl
 import com.gobe.tv.domain.Game
+import com.gobe.tv.ui.art.GameCover
 
 /** Tile caption: game name, plus " (year)" when a real year is known. Pure for unit testing. */
 fun tileCaption(name: String, year: Int?): String =
@@ -60,7 +51,6 @@ fun GameTile(
         LaunchedEffect(Unit) { runCatching { focusRequester.requestFocus() } }
     }
     val focusModifier = if (requestInitialFocus) Modifier.focusRequester(focusRequester) else Modifier
-    val url = coverUrl(game)
 
     Column(
         modifier = modifier.then(focusModifier).width(132.dp),
@@ -72,24 +62,7 @@ fun GameTile(
             colors = CardDefaults.colors(containerColor = MaterialTheme.colorScheme.surface),
         ) {
             Box(Modifier.fillMaxSize()) {
-                if (url != null) {
-                    SubcomposeAsyncImage(
-                        model = url,
-                        contentDescription = game.displayName,
-                        // Fit (not Crop) so the whole box art is shown without cutting; covers have
-                        // varying aspect ratios, so some get letterboxed against the tile surface.
-                        contentScale = ContentScale.Fit,
-                        modifier = Modifier.fillMaxSize(),
-                    ) {
-                        if (painter.state is AsyncImagePainter.State.Success) {
-                            SubcomposeAsyncImageContent()
-                        } else {
-                            DefaultCover(game)
-                        }
-                    }
-                } else {
-                    DefaultCover(game)
-                }
+                GameCover(game, Modifier.fillMaxSize())
 
                 val p = game.players
                 if (p != null && p >= 2) {
@@ -144,43 +117,6 @@ fun GameTile(
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.fillMaxWidth().padding(horizontal = 2.dp),
-        )
-    }
-}
-
-/** Branded placeholder cover for games without box art: the Gobe logo as a faint watermark
- *  with the game's title and system, so the grid stays visual instead of plain text. */
-@OptIn(ExperimentalTvMaterial3Api::class)
-@Composable
-private fun DefaultCover(game: Game) {
-    Box(
-        Modifier
-            .fillMaxSize()
-            .background(Brush.verticalGradient(listOf(Color(0xFF232A3D), Color(0xFF0E1119)))),
-    ) {
-        Image(
-            painter = painterResource(R.drawable.gobe_logo),
-            contentDescription = null,
-            modifier = Modifier
-                .align(Alignment.Center)
-                .fillMaxWidth(0.62f)
-                .alpha(0.16f),
-        )
-        Text(
-            game.system.displayName,
-            style = MaterialTheme.typography.labelSmall,
-            color = Color.White.copy(alpha = 0.6f),
-            modifier = Modifier.align(Alignment.TopStart).padding(8.dp),
-        )
-        Text(
-            game.displayName,
-            style = MaterialTheme.typography.titleSmall,
-            color = Color.White,
-            textAlign = TextAlign.Center,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .padding(10.dp),
         )
     }
 }
