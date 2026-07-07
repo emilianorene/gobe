@@ -145,6 +145,46 @@ files" policy (README). The legal, useful deliverable instead:
 
 Purely a curation/verification aid; no game content is distributed.
 
+## Android TV UI/UX redesign — navigation & layout overhaul (queued 2026-07-06)
+
+A dedicated **design-first** initiative to re-evaluate and redesign Gobe's whole interface for a proper
+10-foot Android TV experience, optimizing **navigation efficiency** across large libraries. Treat this
+as a design project (use the **brainstorming** skill → spec → plan, with the **visual companion** for
+mockups; consult **Android TV / Leanback / Material-for-TV** guidelines), NOT an ad-hoc code change.
+
+**Problems to address:**
+- **Tiles/icons are too big.** The current tile grid shows few items per screen and wastes space; it's
+  slow to scan and navigate a large collection with a D-pad.
+- Navigation takes too many D-pad presses to reach a game and see its info.
+
+**Primary direction to evaluate (the user's proposal):** a **master–detail LIST layout** instead of the
+tile grid —
+- Left/center: a **vertical list of rows**, each = **thumbnail + game name** (compact, many per screen,
+  fast to scan/scroll).
+- Right: a **live detail/description panel** that updates as focus moves — cover art, description
+  (the IGDB metadata already shipped in v0.3), players/genre/year, ★/♥, Play. So the user reads a
+  game's info without leaving the list.
+Compare this against the current tile grid (and hybrid options, e.g. a denser grid, or a list that
+expands to art on focus). Decide per screen: Home (collections/consoles), the level-2 library, search.
+
+**Required deliverables:**
+1. **Mockups of every screen** (Home, console/library list, detail panel, search, in-game pause) —
+   iterated visually before any implementation, so layouts can be worked out and compared side-by-side.
+2. **An exhaustive competitive analysis** vs similar and successful apps — what they do well for TV
+   navigation, list density, focus/scroll ergonomics, art-vs-text balance, and detail presentation:
+   - **Emulator/game frontends:** Daijishō, ES-DE (EmulationStation), Pegasus Frontend, RetroArch
+     (Ozone / XMB), Dig, Beacon (Android TV).
+   - **Media apps with strong TV master–detail UX:** Plex, Jellyfin, Kodi, Netflix, Disney+, Apple TV,
+     YouTube (TV), Steam Big Picture / Deck UI.
+   - **Guidelines:** Google's Android TV design + Leanback patterns, Material Design for TV (focus,
+     D-pad traversal, overscan/safe areas, 10-foot legibility).
+
+**Evaluation criteria:** presses-to-launch, presses-to-see-info, items visible per screen, focus
+clarity, scannability of 100s–1000s of games, info density vs art, and consistency across screens.
+
+**Scope note:** builds on the just-shipped v0.3 (console Hero tiles, favorites, sort, richer metadata) —
+this may replace/rework those Home tiles. Big enough to be its own spec → plan → phased implementation.
+
 ## Other noted follow-ups
 
 - Genre filter/browse on Home (genre data already in the index + Room).
