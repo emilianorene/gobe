@@ -47,9 +47,8 @@ fun GameDetailPanel(
 
         Spacer(Modifier.width(48.dp))
 
-        // RIGHT: metadata + actions. fillMaxHeight so the flexible-weight description can absorb
-        // remaining space and keep the action buttons + footer anchored at the bottom, always
-        // visible regardless of description length or pane height.
+        // RIGHT: metadata + actions. fillMaxHeight lets the weighted description below absorb the
+        // slack and keep the action buttons anchored at the bottom, always visible.
         Column(Modifier.weight(1f).fillMaxHeight()) {
             Text(game.displayName, style = MaterialTheme.typography.displaySmall)
             Spacer(Modifier.height(8.dp))
@@ -91,23 +90,24 @@ fun GameDetailPanel(
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurface,
             )
-            // Flexible middle region: absorbs remaining space so the actions below stay anchored to
-            // the bottom of the pane. Description clips/ellipsizes instead of pushing buttons off.
+            // Description takes the remaining height via weight(1f), so it fills a tall pane
+            // (full-screen DetailScreen) and shrinks in a short one (master-detail) while the action
+            // buttons below stay anchored and fully visible. maxLines is required for the weighted
+            // Text to lay out and ellipsize; the weight caps the actual visible line count to fit.
             if (!game.description.isNullOrBlank()) {
                 Spacer(Modifier.height(12.dp))
-                Box(Modifier.weight(1f).fillMaxWidth()) {
-                    Text(
-                        game.description!!,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 8,
-                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                    )
-                }
+                Text(
+                    game.description!!,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 12,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f).fillMaxWidth(),
+                )
             } else {
                 Spacer(Modifier.weight(1f))
             }
-            Spacer(Modifier.height(32.dp))
+            Spacer(Modifier.height(20.dp))
             if (playable) {
                 Button(
                     onClick = onPlay,
