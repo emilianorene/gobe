@@ -88,6 +88,14 @@ fun LibraryScreen(app: GobeApp, section: LibrarySection, onBack: () -> Unit) {
     LaunchedEffect(focused) { favorite = focused?.favorite ?: false }
 
     val playFocus = remember { FocusRequester() }
+    val railFocus = remember { FocusRequester() }
+
+    // Land focus on the rail's focused row (row 0 initially). Key on `focusedId == null` so this
+    // re-fires after LaunchedEffect(games) populates focusedId — at which point railFocus is
+    // attached to that row. Guarded so it never requests against an empty list.
+    LaunchedEffect(focusedId == null) {
+        if (focused != null) runCatching { railFocus.requestFocus() }
+    }
 
     fun launch(loadState: Boolean) {
         val current = focused ?: return
@@ -113,7 +121,11 @@ fun LibraryScreen(app: GobeApp, section: LibrarySection, onBack: () -> Unit) {
                 val n = listState.layoutInfo.visibleItemsInfo.size.coerceAtLeast(1)
                 val target = (listState.firstVisibleItemIndex + (if (next) n else -n))
                     .coerceIn(0, (games.size - 1).coerceAtLeast(0))
+                // Scroll first so the target row is composed, then move focusedId (which moves the
+                // railFocus requester onto that row) and request focus — panel follows via onFocused.
                 listState.scrollToItem(target)
+                games.getOrNull(target)?.let { focusedId = it.id }
+                runCatching { railFocus.requestFocus() }
             }
             true
         },
@@ -147,34 +159,34 @@ fun LibraryScreen(app: GobeApp, section: LibrarySection, onBack: () -> Unit) {
         }
         Spacer(Modifier.height(24.dp))
 
-        Row(Modifier.weight(1f).fillMaxWidth()) {
-            // LEFT rail: poster rows.
-            if (games.isEmpty()) {
-                Box(Modifier.weight(0.4f).fillMaxHeight()) {
-                    Text(stringResource(R.string.library_empty), style = MaterialTheme.typography.bodyLarge)
-                }
-            } else {
+        if (games.isEmpty() || focused == null) {
+            // Single centered empty-state message; skip the two-pane layout entirely.
+            Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                Text(stringResource(R.string.library_empty), style = MaterialTheme.typography.bodyLarge)
+            }
+        } else {
+            Row(Modifier.weight(1f).fillMaxWidth()) {
+                // LEFT rail: poster rows. The railFocus requester is attached to whichever row is
+                // the focused one, so page-jump can move focus to the target.
                 LazyColumn(
                     modifier = Modifier.weight(0.4f).fillMaxHeight(),
                     state = listState,
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
-                    itemsIndexed(games, key = { _, g -> g.id }) { index, g ->
+                    itemsIndexed(games, key = { _, g -> g.id }) { _, g ->
                         GameRow(
                             game = g,
                             onClick = { focusedId = g.id; launch(false) },
                             onFocused = { focusedId = g.id },
-                            requestInitialFocus = index == 0,
+                            focusRequester = if (g.id == focusedId) railFocus else null,
                         )
                     }
                 }
-            }
 
-            Spacer(Modifier.width(24.dp))
+                Spacer(Modifier.width(24.dp))
 
-            // RIGHT panel: live detail for the focused game.
-            Box(Modifier.weight(0.6f).fillMaxHeight()) {
-                if (focused != null) {
+                // RIGHT panel: live detail for the focused game.
+                Box(Modifier.weight(0.6f).fillMaxHeight()) {
                     GameDetailPanel(
                         game = focused,
                         playable = playable,
@@ -190,8 +202,6 @@ fun LibraryScreen(app: GobeApp, section: LibrarySection, onBack: () -> Unit) {
                         playFocusRequester = playFocus,
                         modifier = Modifier.fillMaxSize(),
                     )
-                } else {
-                    Box(Modifier.fillMaxSize()) { Text(stringResource(R.string.library_empty)) }
                 }
             }
         }

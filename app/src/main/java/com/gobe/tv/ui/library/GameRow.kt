@@ -9,8 +9,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -41,16 +39,10 @@ fun GameRow(
     game: Game,
     onClick: () -> Unit, // A = launch directly
     onFocused: () -> Unit, // focus moved here → parent updates the panel
-    requestInitialFocus: Boolean = false,
+    focusRequester: FocusRequester? = null, // parent owns focus control; attach to the focused row
     modifier: Modifier = Modifier,
 ) {
-    // Mirrors GameTile's approach: own the FocusRequester and request focus from within this
-    // composable once it enters composition, so the requester is attached to a real node.
-    val focusRequester = remember { FocusRequester() }
-    if (requestInitialFocus) {
-        LaunchedEffect(Unit) { runCatching { focusRequester.requestFocus() } }
-    }
-    val focusModifier = if (requestInitialFocus) Modifier.focusRequester(focusRequester) else Modifier
+    val focusModifier = if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier
 
     Card(
         onClick = onClick,
