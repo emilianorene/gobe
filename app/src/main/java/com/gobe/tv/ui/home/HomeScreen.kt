@@ -1,15 +1,11 @@
 package com.gobe.tv.ui.home
 
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.runtime.*
@@ -19,7 +15,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
@@ -28,13 +23,12 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.nativeKeyCode
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -50,6 +44,7 @@ import com.gobe.tv.R
 import com.gobe.tv.domain.System
 import com.gobe.tv.ui.folders.vmFactory
 import com.gobe.tv.ui.library.LibrarySection
+import com.gobe.tv.ui.theme.GobeBg
 
 @Composable
 fun HomeScreen(
@@ -61,27 +56,32 @@ fun HomeScreen(
     val vm: HomeViewModel = viewModel(factory = vmFactory { HomeViewModel(app.repository, app.defaultRomPath) })
     val state by vm.state.collectAsState()
     var query by remember { mutableStateOf("") }
-    val settingsFocus = remember { FocusRequester() }
     val searchFocus = remember { FocusRequester() }
+    val heroFocus = remember { FocusRequester() }
     val keyboard = LocalSoftwareKeyboardController.current
 
-    // Level-1 sections: special collections first, then one per console.
-    val collections: List<Pair<String, LibrarySection>> = buildList {
-        add(stringResource(R.string.section_recommended) to LibrarySection.Recommended)
-        add(stringResource(R.string.section_favorites) to LibrarySection.Favorites)
-    }
-    val consoles: List<Pair<String, LibrarySection>> =
-        System.entries.map { it.displayName to LibrarySection.Console(it) }
+    val focused = state.focusedSystem
+    val accent = if (focused != null) consoleArt(focused).accent else MaterialTheme.colorScheme.primary
+    val bg by animateColorAsState(
+        lerpToward(GobeBg, accent, 0.22f), label = "stageBg",
+    )
 
     Column(
-        Modifier.fillMaxSize().padding(40.dp).onPreviewKeyEvent { event ->
-            val action = keyToHomeAction(event.key.nativeKeyCode) ?: return@onPreviewKeyEvent false
-            if (event.type == KeyEventType.KeyDown) when (action) {
-                HomeKeyAction.Search -> { runCatching { searchFocus.requestFocus() }; keyboard?.show() }
-                HomeKeyAction.Settings -> onOpenSettings()
-            }
-            true
-        },
+        Modifier
+            .fillMaxSize()
+            .background(Brush.verticalGradient(listOf(bg, GobeBg)))
+            .padding(40.dp)
+            .onPreviewKeyEvent { event ->
+                if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                keyToHomeAction(event.key.nativeKeyCode)?.let { action ->
+                    when (action) {
+                        HomeKeyAction.Search -> { runCatching { searchFocus.requestFocus() }; keyboard?.show() }
+                        HomeKeyAction.Settings -> onOpenSettings()
+                    }
+                    return@onPreviewKeyEvent true
+                }
+                false
+            },
     ) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Image(painterResource(R.drawable.gobe_logo), "Gobe", modifier = Modifier.height(56.dp))
@@ -92,122 +92,151 @@ fun HomeScreen(
                 focusRequester = searchFocus, modifier = Modifier.weight(1f),
             )
             Spacer(Modifier.width(24.dp))
-            Button(onClick = onOpenSettings, modifier = Modifier.focusRequester(settingsFocus)) {
-                Text("⚙ " + stringResource(R.string.home_settings))
-            }
+            Button(onClick = onOpenSettings) { Text("⚙ " + stringResource(R.string.home_settings)) }
         }
         Spacer(Modifier.height(24.dp))
 
-        val hasContinue = state.continuePlaying.isNotEmpty()
         Box(Modifier.weight(1f).fillMaxWidth()) {
             when {
-                state.loading -> Text(stringResource(R.string.home_scanning), style = MaterialTheme.typography.bodyLarge)
-                else -> LazyVerticalGrid(
-                    columns = GridCells.Adaptive(180.dp),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    modifier = Modifier.fillMaxSize(),
-                ) {
-                    if (hasContinue) {
-                        item(span = { GridItemSpan(maxLineSpan) }) {
-                            RowHeader(stringResource(R.string.home_continue_playing))
-                        }
-                        item(span = { GridItemSpan(maxLineSpan) }) {
-                            LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                                items(state.continuePlaying, key = { it.id }) { g ->
-                                    GameTile(game = g, onClick = { onOpenGame(g.id) },
-                                        requestInitialFocus = g == state.continuePlaying.first())
-                                }
-                            }
-                        }
-                    }
-                    itemsIndexed(collections) { i, (label, section) ->
-                        SectionTile(
-                            label = label,
-                            section = section,
-                            onClick = { onOpenSection(section) },
-                            requestInitialFocus = !hasContinue && i == 0,
-                        )
-                    }
-                    item(span = { GridItemSpan(maxLineSpan) }) {
-                        RowHeader(stringResource(R.string.home_consoles))
-                    }
-                    itemsIndexed(consoles) { _, (label, section) ->
-                        SectionTile(
-                            label = label,
-                            section = section,
-                            onClick = { onOpenSection(section) },
-                            requestInitialFocus = false,
-                        )
-                    }
-                }
+                state.loading -> Text(
+                    stringResource(R.string.home_scanning),
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.align(Alignment.Center),
+                )
+                focused == null -> EmptyLibrary(onOpenSettings = onOpenSettings, modifier = Modifier.align(Alignment.Center))
+                else -> CarouselStage(
+                    consoles = state.consoles,
+                    focused = focused,
+                    accent = accent,
+                    continueForFocused = state.continueForFocused,
+                    heroFocus = heroFocus,
+                    onMove = { delta -> vm.move(delta) },
+                    onOpenConsole = { onOpenSection(LibrarySection.Console(focused)) },
+                    onOpenGame = onOpenGame,
+                    onFocusUp = { runCatching { searchFocus.requestFocus() } },
+                )
             }
         }
         HomeControlLegend()
     }
 }
 
-@Composable
-private fun RowHeader(text: String) {
-    Text(
-        text,
-        style = MaterialTheme.typography.labelLarge,
-        color = MaterialTheme.colorScheme.onSurface,
-        modifier = Modifier.padding(start = 4.dp, top = 12.dp, bottom = 8.dp),
-    )
-}
-
 @OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
-private fun SectionTile(
-    label: String,
-    section: LibrarySection,
-    onClick: () -> Unit,
-    requestInitialFocus: Boolean,
+private fun CarouselStage(
+    consoles: List<ConsoleEntry>,
+    focused: System,
+    accent: Color,
+    continueForFocused: List<com.gobe.tv.domain.Game>,
+    heroFocus: FocusRequester,
+    onMove: (Int) -> Unit,
+    onOpenConsole: () -> Unit,
+    onOpenGame: (Long) -> Unit,
+    onFocusUp: () -> Unit,
 ) {
-    val visual = sectionVisual(section)
-    val focus = remember { FocusRequester() }
-    var focused by remember { mutableStateOf(false) }
-    if (requestInitialFocus) LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
-    Card(
-        onClick = onClick,
-        modifier = (if (requestInitialFocus) Modifier.focusRequester(focus) else Modifier)
-            .fillMaxWidth().aspectRatio(1.3f)
-            .onFocusChanged { focused = it.isFocused },
-        colors = CardDefaults.colors(containerColor = MaterialTheme.colorScheme.surface),
-    ) {
-        Box(Modifier.fillMaxSize()) {
-            BoxWithConstraints(Modifier.fillMaxSize()) {
-                val glowRadius = with(LocalDensity.current) { maxWidth.toPx() } * 0.72f
-                Box(
-                    Modifier.fillMaxSize().background(
-                        Brush.radialGradient(
-                            colors = listOf(
-                                visual.accent.copy(alpha = if (focused) 0.55f else 0.32f),
-                                Color.Transparent,
-                            ),
-                            radius = glowRadius,
-                        )
-                    )
-                )
+    val count = consoles.firstOrNull { it.system == focused }?.count ?: 0
+    val hasContinue = continueForFocused.isNotEmpty()
+    val focusManager = LocalFocusManager.current
+
+    LaunchedEffect(Unit) { runCatching { heroFocus.requestFocus() } }
+
+    Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
+        Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+            Text("‹", style = MaterialTheme.typography.displayMedium,
+                color = Color.White.copy(alpha = 0.25f),
+                modifier = Modifier.align(Alignment.CenterStart))
+            Text("›", style = MaterialTheme.typography.displayMedium,
+                color = Color.White.copy(alpha = 0.25f),
+                modifier = Modifier.align(Alignment.CenterEnd))
+
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Card(
+                    onClick = onOpenConsole,
+                    modifier = Modifier
+                        .focusRequester(heroFocus)
+                        .fillMaxWidth(0.42f)
+                        .aspectRatio(1.4f)
+                        .onPreviewKeyEvent { e ->
+                            if (e.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                            when (e.key) {
+                                Key.DirectionLeft -> { onMove(-1); true }
+                                Key.DirectionRight -> { onMove(+1); true }
+                                Key.DirectionUp -> { onFocusUp(); true }
+                                Key.DirectionDown -> {
+                                    if (hasContinue) { focusManager.moveFocus(FocusDirection.Down); true } else true
+                                }
+                                else -> false
+                            }
+                        },
+                    colors = CardDefaults.colors(containerColor = Color.Transparent),
+                ) {
+                    ConsoleHero(consoleArt(focused), Modifier.fillMaxSize())
+                }
+                Spacer(Modifier.height(20.dp))
+                Text(focused.displayName, fontSize = 44.sp, fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground)
+                Text("$count " + stringResource(R.string.home_games_count),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f))
+                Spacer(Modifier.height(16.dp))
+                ConsoleDots(consoles = consoles, focused = focused, accent = accent)
             }
-            Column(
-                Modifier.fillMaxSize().padding(14.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-            ) {
-                Image(
-                    painter = painterResource(visual.iconRes),
-                    contentDescription = null,
-                    contentScale = ContentScale.Fit,
-                    modifier = Modifier.fillMaxWidth(0.72f).weight(1f),
-                )
-                Spacer(Modifier.height(8.dp))
-                Text(label, style = MaterialTheme.typography.titleMedium, maxLines = 1)
+        }
+
+        if (hasContinue) {
+            Spacer(Modifier.height(12.dp))
+            Column(Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.home_continue_playing),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(start = 4.dp, bottom = 8.dp))
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    items(continueForFocused, key = { it.id }) { g ->
+                        GameTile(game = g, onClick = { onOpenGame(g.id) }, requestInitialFocus = false)
+                    }
+                }
             }
         }
     }
 }
+
+@Composable
+private fun ConsoleDots(consoles: List<ConsoleEntry>, focused: System, accent: Color) {
+    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        consoles.forEach { entry ->
+            val on = entry.system == focused
+            Box(
+                Modifier
+                    .clip(RoundedCornerShape(50))
+                    .background(if (on) accent else MaterialTheme.colorScheme.surface)
+                    .padding(horizontal = 16.dp, vertical = 6.dp),
+            ) {
+                Text(
+                    entry.system.displayName,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = if (on) Color.Black else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun EmptyLibrary(onOpenSettings: () -> Unit, modifier: Modifier = Modifier) {
+    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(stringResource(R.string.home_no_games), style = MaterialTheme.typography.headlineSmall)
+        Spacer(Modifier.height(16.dp))
+        Button(onClick = onOpenSettings) { Text(stringResource(R.string.home_add_roms)) }
+    }
+}
+
+/** Linear blend of two colors in sRGB; small helper for the stage tint. */
+private fun lerpToward(from: Color, to: Color, t: Float): Color = Color(
+    red = from.red + (to.red - from.red) * t,
+    green = from.green + (to.green - from.green) * t,
+    blue = from.blue + (to.blue - from.blue) * t,
+    alpha = 1f,
+)
 
 @Composable
 private fun SearchField(

@@ -22,6 +22,8 @@
     <string name="filter_recommended">Recommended</string>
     <!-- v0.3 console-home + favorites + sort -->
     <string name="home_consoles">Consoles</string>
+    <string name="home_games_count">games</string>
+    <string name="home_add_roms">Add ROM folders</string>
     <string name="section_recommended">Recommended</string>
     <string name="section_favorites">Favorites</string>
     <string name="detail_favorite">Favorite</string>
