@@ -3,7 +3,19 @@
 A living plan for where Gobe is headed. Dates are directional, not commitments — this is a personal
 project. Items graduate to the [CHANGELOG](CHANGELOG.md) as they ship.
 
-## ✅ v0.3.0-beta — _current_ — Library & content
+## ✅ v0.4.0-beta — _current_ — Navigation
+
+A faster, denser way to browse a big library on a TV.
+
+- **Master–detail game browsing** — the console/library and search screens become a two-pane layout:
+  a vertical **poster rail** (cover + name + year·genre + ★/♥) plus a **live detail panel** that
+  updates as you move the highlight. Ⓐ launches directly, Right opens the panel's actions, L1/R1
+  page-jump. Replaces the cover-tile grid — more games per screen, zero presses to see a game's info.
+
+_First slice of the broader Android TV UI/UX redesign; Home, in-game pause and further polish are
+follow-ups (see `docs/superpowers/BACKLOG.md`)._
+
+## ✅ v0.3.0-beta — Library & content
 
 Make a large collection pleasant to browse.
 

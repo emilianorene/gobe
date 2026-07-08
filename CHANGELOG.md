@@ -11,6 +11,24 @@ Each released `app-release.apk` is attached to its tag on the
 
 _Nothing yet._
 
+## [0.4.0-beta] — 2026-07-07
+
+**Navigation** — a faster, denser way to browse and read about your games.
+
+### Changed
+
+- **Master–detail game browsing** — the console/library and search screens are redesigned as a
+  two-pane layout: a vertical **poster rail** (cover + name + year·genre + ★/♥) on the left and a
+  **live detail panel** on the right that updates as you move the highlight — so you see a game's
+  cover, description, and metadata without leaving the list. **Ⓐ launches the game directly**;
+  **Right** enters the panel for Play / Resume / Favorite; **L1/R1** jump a page in the rail.
+  Replaces the old cover-tile grid, showing more games per screen and cutting presses-to-info to zero.
+
+### Internal
+
+- Shared `GameCover` and `GameDetailPanel` composables (the panel is reused by the full-screen
+  detail view); pure, unit-tested `LibraryKeyMap` (L1/R1 → page) and `rowSubtitle` helpers.
+
 ## [0.3.0-beta] — 2026-07-06
 
 **Library & content** — make a large collection pleasant to browse.
