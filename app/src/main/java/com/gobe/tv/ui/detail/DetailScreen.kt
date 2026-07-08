@@ -2,16 +2,11 @@ package com.gobe.tv.ui.detail
 
 import android.content.Intent
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -19,14 +14,9 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.tv.material3.Button
-import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
-import coil.compose.AsyncImagePainter
-import coil.compose.SubcomposeAsyncImage
-import coil.compose.SubcomposeAsyncImageContent
 import com.gobe.tv.GobeApp
 import com.gobe.tv.R
-import com.gobe.tv.data.art.coverUrl
 import com.gobe.tv.domain.Game
 import com.gobe.tv.emulation.EmulatorActivity
 import com.gobe.tv.emulation.EmulatorArgs
@@ -89,118 +79,25 @@ fun DetailScreen(app: GobeApp, gameId: Long, onBack: () -> Unit) {
         if (g == null) {
             Text(stringResource(R.string.detail_loading))
         } else {
-            Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.Top) {
-                // LEFT: large cover art
-                CoverArt(g)
-
-                Spacer(Modifier.width(48.dp))
-
-                // RIGHT: metadata + actions
-                Column(Modifier.weight(1f)) {
-                    Text(g.displayName, style = MaterialTheme.typography.displaySmall)
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        g.system.displayName,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        stringResource(R.string.detail_players) + ": " + (g.players?.toString() ?: "—"),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        stringResource(R.string.detail_genre) + ": " + (g.genre ?: "—"),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        stringResource(R.string.detail_year) + ": " + (g.year?.toString() ?: "—"),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                    Spacer(Modifier.height(4.dp))
-                    if (g.recommended) {
-                        Text(
-                            "★ " + stringResource(R.string.game_recommended),
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = androidx.compose.ui.graphics.Color(0xFFFFD54F),
-                        )
-                        Spacer(Modifier.height(4.dp))
-                    }
-                    Text(
-                        stringResource(R.string.detail_size_kb, (g.sizeBytes / 1024).toInt()) +
-                            if (hasState) " · " + stringResource(R.string.detail_save_state_present) else "",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                    if (!g.description.isNullOrBlank()) {
-                        Spacer(Modifier.height(12.dp))
-                        Text(
-                            g.description!!,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            maxLines = 8,
-                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                        )
-                    }
-                    Spacer(Modifier.height(32.dp))
-                    if (playable) {
-                        Button(
-                            onClick = { launch(loadState = false) },
-                            modifier = Modifier.focusRequester(playFocus),
-                        ) { Text("▶ " + stringResource(R.string.detail_play)) }
-                        if (hasState) {
-                            Spacer(Modifier.height(12.dp))
-                            Button(onClick = { launch(loadState = true) }) { Text("⟳ " + stringResource(R.string.detail_resume_save)) }
-                        }
-                    } else {
-                        Button(onClick = { }, enabled = false) { Text("▶ " + stringResource(R.string.detail_play_soon)) }
-                    }
-                    Spacer(Modifier.height(12.dp))
-                    Button(onClick = {
-                        val id = g.id
-                        favorite = !favorite
-                        scope.launch { app.repository.updateFavorite(id, favorite) }
-                    }) {
-                        Text((if (favorite) "♥ " else "♡ ") +
-                            stringResource(if (favorite) R.string.detail_unfavorite else R.string.detail_favorite))
-                    }
+            GameDetailPanel(
+                game = g,
+                playable = playable,
+                hasState = hasState,
+                favorite = favorite,
+                onPlay = { launch(false) },
+                onResume = { launch(true) },
+                onToggleFavorite = {
+                    val id = g.id
+                    favorite = !favorite
+                    scope.launch { app.repository.updateFavorite(id, favorite) }
+                },
+                playFocusRequester = playFocus,
+                modifier = Modifier.fillMaxSize(),
+                footer = {
                     Spacer(Modifier.height(12.dp))
                     Button(onClick = onBack, modifier = Modifier.focusRequester(backFocus)) { Text(stringResource(R.string.detail_back)) }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun CoverArt(game: Game) {
-    val shape = RoundedCornerShape(12.dp)
-    val url = coverUrl(game)
-    Box(
-        modifier = Modifier
-            .width(220.dp)
-            .height(300.dp)
-            .clip(shape)
-            .background(MaterialTheme.colorScheme.surface),
-    ) {
-        if (url != null) {
-            SubcomposeAsyncImage(
-                model = url,
-                contentDescription = game.displayName,
-                // Fit (not Crop) so the whole cover is shown without cutting.
-                contentScale = ContentScale.Fit,
-                modifier = Modifier.fillMaxSize(),
-            ) {
-                if (painter.state is AsyncImagePainter.State.Success) {
-                    SubcomposeAsyncImageContent()
-                }
-                // loading / error / null-URL -> placeholder surface (the Box background)
-            }
+                },
+            )
         }
     }
 }

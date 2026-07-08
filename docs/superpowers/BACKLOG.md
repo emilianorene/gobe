@@ -185,6 +185,16 @@ clarity, scannability of 100s–1000s of games, info density vs art, and consist
 **Scope note:** builds on the just-shipped v0.3 (console Hero tiles, favorites, sort, richer metadata) —
 this may replace/rework those Home tiles. Big enough to be its own spec → plan → phased implementation.
 
+## Master-detail panel: condensed description (follow-up, 2026-07-07)
+
+The master-detail library pane (branch `feat/tv-library-master-detail`) shows the game description
+condensed to ~1-2 lines because the metadata block (game name in `displaySmall` + 6 separate lines:
+system/players/genre/year/recommended/size) eats the pane height, and the description is given the
+leftover via `weight(1f)` so the action buttons stay visible. To show more of the description, compact
+the metadata in `GameDetailPanel` — e.g. collapse it to one or two lines like
+`SNES · 1992 · 1 player · Platform` (+ a ★/💾 chip row) instead of one label-per-line. Verify both the
+master-detail pane and the full-screen `DetailScreen` (shared component) still look right on the ONN.
+
 ## Other noted follow-ups
 
 - Genre filter/browse on Home (genre data already in the index + Room).

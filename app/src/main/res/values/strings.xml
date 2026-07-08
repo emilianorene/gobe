@@ -13,6 +13,9 @@
     <string name="legend_back">Back</string>
     <string name="legend_search">Search</string>
     <string name="legend_settings">Settings</string>
+    <string name="legend_play">Play</string>
+    <string name="legend_page">Page</string>
+    <string name="legend_actions">Actions</string>
     <string name="filter_all">All</string>
     <!-- Recommended badge -->
     <string name="game_recommended">Recommended</string>
