@@ -126,6 +126,11 @@ systems. Recorded here in case we want to revisit; not implemented.
     favorites") instead of one global list. Accepted for v1 as the clean,
     console-first framing; a global cross-console view is an optional later
     follow-up.
+  - Cleanup: once the home tiles are gone, the global
+    `LibrarySection.Recommended` / `LibrarySection.Favorites` variants (and their
+    `sectionFilter` branches) have no remaining route to them. **Remove those two
+    variants and their branches** as part of this work so no dead entry points
+    linger.
 - **Consoles with zero games are hidden** from the carousel to keep it clean.
 - **First-run / no games at all:** if no console has any games, show the
   existing onboarding path (prompt to add ROM folders — reuse the `Route.Folders`
