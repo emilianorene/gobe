@@ -37,9 +37,17 @@ class LibraryViewModel(private val repo: LibraryRepository, section: LibrarySect
             }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    // Genres present in THIS section (derived from the section's games, ignoring the genre chip).
+    // Genres present in THIS section under the active collection filter (ignoring the genre chip
+    // itself). Reacts to _filter so a genre never lingers that would yield an empty filtered list.
     val genres: StateFlow<List<String>> =
-        repo.searchGames(base.query, base.system, null, base.recommendedOnly, base.favoritesOnly, SortMode.TITLE)
+        _filter.flatMapLatest { f ->
+            val flags = collectionFlags(f)
+            repo.searchGames(
+                base.query, base.system, null,
+                base.recommendedOnly || flags.recommendedOnly,
+                base.favoritesOnly || flags.favoritesOnly, SortMode.TITLE,
+            )
+        }
             .map { list -> list.mapNotNull { it.genre }.filter { it.isNotBlank() }.distinct().sorted() }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 }
