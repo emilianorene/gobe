@@ -11,6 +11,27 @@ Each released `app-release.apk` is attached to its tag on the
 
 _Nothing yet._
 
+## [0.6.0-beta] — 2026-07-08
+
+**Home redesign** — a cinematic, console-first home screen.
+
+### Changed
+
+- **Console carousel Home** — the home screen is now a full-screen carousel showing one console at a
+  time as the hero: its controller art floats on the dark stage lit by that console's accent glow, and
+  moving left/right re-tints the whole background to the focused console's color. Replaces the flat grid
+  of tiles, making the console choice the main event.
+- **Continue-playing is now per-console** — a slim strip at the bottom that appears only when the
+  focused console has games you've recently played, instead of one global row.
+- **Recommended / Favorites moved into the library** — no longer top-level Home sections; inside a
+  console's library, chips filter to ★ Recommended or ♥ Favorites, and the genre chips adapt to the
+  active filter.
+
+### Added
+
+- Real controller artwork for **NES, SNES and N64** (public-domain photos, background-removed to float
+  on the dark UI). Arcade keeps a placeholder controller icon until a suitable image is sourced.
+
 ## [0.5.0-beta] — 2026-07-07
 
 **Nintendo 64** — the fourth console comes online.

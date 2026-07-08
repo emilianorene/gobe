@@ -3,7 +3,17 @@
 A living plan for where Gobe is headed. Dates are directional, not commitments — this is a personal
 project. Items graduate to the [CHANGELOG](CHANGELOG.md) as they ship.
 
-## ✅ v0.5.0-beta — _current_ — Nintendo 64
+## ✅ v0.6.0-beta — _current_ — Home redesign
+
+The Android TV home screen becomes console-first and cinematic.
+
+- **Console carousel Home** — one console at a time fills the screen as the hero; its controller art
+  floats on the dark stage over an accent glow, and moving left/right re-tints the whole background to
+  the focused console. Replaces the flat tile grid. Continue-playing becomes a per-console strip, and
+  Recommended/Favorites move into the library as a per-console filter (chips, with genre chips adapting).
+  Real public-domain controller photos for NES/SNES/N64; Arcade keeps a placeholder icon for now.
+
+## ✅ v0.5.0-beta — Nintendo 64
 
 The fourth console goes live.
 
