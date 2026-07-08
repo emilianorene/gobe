@@ -595,7 +595,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
@@ -640,7 +639,6 @@ fun HomeScreen(
     val searchFocus = remember { FocusRequester() }
     val heroFocus = remember { FocusRequester() }
     val keyboard = LocalSoftwareKeyboardController.current
-    val focusManager = LocalFocusManager.current
 
     val focused = state.focusedSystem
     val accent = if (focused != null) consoleArt(focused).accent else MaterialTheme.colorScheme.primary
