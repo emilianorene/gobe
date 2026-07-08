@@ -16,14 +16,8 @@ class SectionVisualsTest {
         assertEquals(R.drawable.ic_controller_n64, sectionVisual(LibrarySection.Console(System.N64)).iconRes)
         assertEquals(R.drawable.ic_controller_arcade, sectionVisual(LibrarySection.Console(System.ARCADE)).iconRes)
     }
-    @Test fun recommendedAndFavoritesMapToStarAndHeart() {
-        assertEquals(R.drawable.ic_section_recommended, sectionVisual(LibrarySection.Recommended).iconRes)
-        assertEquals(GobeAccentRecommended, sectionVisual(LibrarySection.Recommended).accent)
-        assertEquals(R.drawable.ic_section_favorites, sectionVisual(LibrarySection.Favorites).iconRes)
-        assertEquals(GobeAccentFavorites, sectionVisual(LibrarySection.Favorites).accent)
-    }
-    @Test fun nesAccentDiffersFromFavoritesRed() {
+    @Test fun nesAccentDiffersFromSnes() {
         assertNotEquals(sectionVisual(LibrarySection.Console(System.NES)).accent,
-                        sectionVisual(LibrarySection.Favorites).accent)
+                        sectionVisual(LibrarySection.Console(System.SNES)).accent)
     }
 }

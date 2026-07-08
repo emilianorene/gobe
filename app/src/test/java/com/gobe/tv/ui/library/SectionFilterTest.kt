@@ -11,12 +11,6 @@ class SectionFilterTest {
         assertEquals(System.SNES, f.system)
         assertTrue(!f.recommendedOnly && !f.favoritesOnly && f.query == "")
     }
-    @Test fun recommendedSection() {
-        assertTrue(sectionFilter(LibrarySection.Recommended).recommendedOnly)
-    }
-    @Test fun favoritesSection() {
-        assertTrue(sectionFilter(LibrarySection.Favorites).favoritesOnly)
-    }
     @Test fun searchAllCarriesQuery() {
         val f = sectionFilter(LibrarySection.SearchAll("zelda"))
         assertEquals("zelda", f.query)

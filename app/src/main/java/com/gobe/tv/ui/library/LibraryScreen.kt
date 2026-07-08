@@ -53,6 +53,7 @@ fun LibraryScreen(app: GobeApp, section: LibrarySection, onBack: () -> Unit) {
     val genres by vm.genres.collectAsState()
     val selectedGenre by vm.selectedGenre.collectAsState()
     val sortMode by vm.sortMode.collectAsState()
+    val collectionFilter by vm.collectionFilter.collectAsState()
 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -138,6 +139,16 @@ fun LibraryScreen(app: GobeApp, section: LibrarySection, onBack: () -> Unit) {
                 style = MaterialTheme.typography.headlineMedium,
             )
             Spacer(Modifier.weight(1f))
+            FilterChip(stringResource(R.string.filter_all), collectionFilter == CollectionFilter.ALL) { vm.setFilter(CollectionFilter.ALL) }
+            Spacer(Modifier.width(8.dp))
+            FilterChip("★ " + stringResource(R.string.section_recommended), collectionFilter == CollectionFilter.RECOMMENDED) {
+                vm.setFilter(if (collectionFilter == CollectionFilter.RECOMMENDED) CollectionFilter.ALL else CollectionFilter.RECOMMENDED)
+            }
+            Spacer(Modifier.width(8.dp))
+            FilterChip("♥ " + stringResource(R.string.section_favorites), collectionFilter == CollectionFilter.FAVORITES) {
+                vm.setFilter(if (collectionFilter == CollectionFilter.FAVORITES) CollectionFilter.ALL else CollectionFilter.FAVORITES)
+            }
+            Spacer(Modifier.width(12.dp))
             Button(onClick = { vm.cycleSort() }) {
                 Text("↕ " + stringResource(R.string.sort_label) + ": " + sortLabel(sortMode))
             }
@@ -218,6 +229,11 @@ fun LibraryScreen(app: GobeApp, section: LibrarySection, onBack: () -> Unit) {
 }
 
 @Composable
+private fun FilterChip(label: String, selected: Boolean, onClick: () -> Unit) {
+    Button(onClick = onClick) { Text((if (selected) "● " else "") + label) }
+}
+
+@Composable
 private fun LibraryControlLegend() {
     val play = stringResource(R.string.legend_play)
     val back = stringResource(R.string.legend_back)
@@ -241,7 +257,5 @@ private fun sortLabel(mode: SortMode): String = when (mode) {
 @Composable
 private fun sectionTitle(section: LibrarySection): String = when (section) {
     is LibrarySection.Console -> section.system.displayName
-    LibrarySection.Recommended -> stringResource(R.string.section_recommended)
-    LibrarySection.Favorites -> stringResource(R.string.section_favorites)
     is LibrarySection.SearchAll -> "\"" + section.query + "\""
 }

@@ -46,6 +46,14 @@ class LibraryRepository(
     fun observeContinuePlaying(limit: Int = 12): Flow<List<Game>> =
         gameDao.observeContinuePlaying(limit).map { list -> list.map { it.toDomain() } }
 
+    /** Per-system game counts (only systems with ≥1 game appear). */
+    fun observeCountsBySystem(): Flow<Map<System, Int>> =
+        gameDao.observeCountsBySystem().map { rows -> rows.associate { it.system to it.count } }
+
+    /** Recently played games for one system, newest first. */
+    fun observeContinuePlayingBySystem(system: System, limit: Int = 12): Flow<List<Game>> =
+        gameDao.observeContinuePlayingBySystem(system.name, limit).map { list -> list.map { it.toDomain() } }
+
     /** Scans enabled folders and reconciles the DB. Returns number of games after scan. */
     suspend fun rescan(): Int {
         val paths = folderDao.getEnabled().map { it.path }

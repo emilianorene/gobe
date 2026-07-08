@@ -17,6 +17,8 @@
     <string name="game_recommended">Recomendado</string>
     <string name="filter_recommended">Recomendados</string>
     <string name="home_consoles">Consolas</string>
+    <string name="home_games_count">juegos</string>
+    <string name="home_add_roms">Agregar carpetas de ROMs</string>
     <string name="section_recommended">Recomendados</string>
     <string name="section_favorites">Favoritos</string>
     <string name="detail_favorite">Favorito</string>
