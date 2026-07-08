@@ -1,8 +1,10 @@
 package com.gobe.tv.ui.home
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -12,9 +14,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
@@ -34,8 +38,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.tv.material3.Button
-import androidx.tv.material3.Card
-import androidx.tv.material3.CardDefaults
 import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
@@ -153,12 +155,16 @@ private fun CarouselStage(
                 modifier = Modifier.align(Alignment.CenterEnd))
 
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Card(
-                    onClick = onOpenConsole,
+                var heroFocused by remember { mutableStateOf(false) }
+                val heroScale by animateFloatAsState(if (heroFocused) 1.05f else 1f, label = "heroScale")
+                Box(
                     modifier = Modifier
                         .focusRequester(heroFocus)
                         .fillMaxWidth(0.42f)
                         .aspectRatio(1.4f)
+                        .scale(heroScale)
+                        .onFocusChanged { heroFocused = it.isFocused }
+                        .focusable()
                         .onPreviewKeyEvent { e ->
                             if (e.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
                             when (e.key) {
@@ -168,12 +174,13 @@ private fun CarouselStage(
                                 Key.DirectionDown -> {
                                     if (hasContinue) { focusManager.moveFocus(FocusDirection.Down); true } else true
                                 }
+                                Key.DirectionCenter, Key.Enter, Key.NumPadEnter -> { onOpenConsole(); true }
                                 else -> false
                             }
                         },
-                    colors = CardDefaults.colors(containerColor = Color.Transparent),
+                    contentAlignment = Alignment.Center,
                 ) {
-                    ConsoleHero(consoleArt(focused), Modifier.fillMaxSize())
+                    ConsoleHero(consoleArt(focused), focused = heroFocused, modifier = Modifier.fillMaxSize())
                 }
                 Spacer(Modifier.height(20.dp))
                 Text(focused.displayName, fontSize = 44.sp, fontWeight = FontWeight.Bold,
