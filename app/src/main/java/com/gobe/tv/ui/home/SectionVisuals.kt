@@ -22,7 +22,5 @@ fun sectionVisual(section: LibrarySection): SectionVisual = when (section) {
         System.N64    -> SectionVisual(R.drawable.ic_controller_n64, GobeAccentN64)
         System.ARCADE -> SectionVisual(R.drawable.ic_controller_arcade, GobeAccentArcade)
     }
-    LibrarySection.Recommended -> SectionVisual(R.drawable.ic_section_recommended, GobeAccentRecommended)
-    LibrarySection.Favorites   -> SectionVisual(R.drawable.ic_section_favorites, GobeAccentFavorites)
     is LibrarySection.SearchAll -> SectionVisual(R.drawable.ic_section_recommended, GobeAccent) // never rendered
 }

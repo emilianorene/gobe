@@ -5,8 +5,6 @@ import com.gobe.tv.domain.System
 /** A level-1 Home entry: a console, a special collection, or a search. Opens a LibraryScreen. */
 sealed interface LibrarySection {
     data class Console(val system: System) : LibrarySection
-    data object Recommended : LibrarySection
-    data object Favorites : LibrarySection
     data class SearchAll(val query: String) : LibrarySection
 }
 
@@ -20,7 +18,5 @@ data class SectionFilter(
 
 fun sectionFilter(section: LibrarySection): SectionFilter = when (section) {
     is LibrarySection.Console -> SectionFilter("", section.system, false, false)
-    LibrarySection.Recommended -> SectionFilter("", null, true, false)
-    LibrarySection.Favorites -> SectionFilter("", null, false, true)
     is LibrarySection.SearchAll -> SectionFilter(section.query, null, false, false)
 }

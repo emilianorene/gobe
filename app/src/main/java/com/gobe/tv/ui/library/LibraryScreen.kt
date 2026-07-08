@@ -257,7 +257,5 @@ private fun sortLabel(mode: SortMode): String = when (mode) {
 @Composable
 private fun sectionTitle(section: LibrarySection): String = when (section) {
     is LibrarySection.Console -> section.system.displayName
-    LibrarySection.Recommended -> stringResource(R.string.section_recommended)
-    LibrarySection.Favorites -> stringResource(R.string.section_favorites)
     is LibrarySection.SearchAll -> "\"" + section.query + "\""
 }
