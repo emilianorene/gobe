@@ -17,14 +17,23 @@ class LibraryViewModel(private val repo: LibraryRepository, section: LibrarySect
     private val _sort = MutableStateFlow(SortMode.RECOMMENDED)
     val sortMode: StateFlow<SortMode> = _sort
 
+    private val _filter = MutableStateFlow(CollectionFilter.ALL)
+    val collectionFilter: StateFlow<CollectionFilter> = _filter
+
     fun setGenre(g: String?) { _genre.value = g }
     fun cycleSort() { _sort.value = SortMode.entries[(_sort.value.ordinal + 1) % SortMode.entries.size] }
+    fun setFilter(f: CollectionFilter) { _filter.value = f }
 
-    // Only genre + sort are reactive; the base filter is fixed by the section.
+    // Genre + sort + collection filter are reactive; system/query stay fixed by the section.
     val games: StateFlow<List<Game>> =
-        combine(_genre, _sort) { g, s -> g to s }
-            .flatMapLatest { (g, s) ->
-                repo.searchGames(base.query, base.system, g, base.recommendedOnly, base.favoritesOnly, s)
+        combine(_genre, _sort, _filter) { g, s, f -> Triple(g, s, f) }
+            .flatMapLatest { (g, s, f) ->
+                val flags = collectionFlags(f)
+                repo.searchGames(
+                    base.query, base.system, g,
+                    base.recommendedOnly || flags.recommendedOnly,
+                    base.favoritesOnly || flags.favoritesOnly, s,
+                )
             }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
