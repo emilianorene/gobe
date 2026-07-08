@@ -37,7 +37,8 @@ class HomeViewModel(private val repo: LibraryRepository, defaultPath: String) : 
 
     private val continueForFocused: StateFlow<List<Game>> =
         focused.flatMapLatest { s ->
-            if (s == null) flowOf(emptyList()) else repo.observeContinuePlayingBySystem(s)
+            if (s == null) flowOf(emptyList())
+            else flow { emit(emptyList()); emitAll(repo.observeContinuePlayingBySystem(s)) }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val state: StateFlow<HomeState> =

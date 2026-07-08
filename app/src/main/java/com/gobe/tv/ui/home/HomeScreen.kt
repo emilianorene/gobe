@@ -39,8 +39,10 @@ import androidx.tv.material3.CardDefaults
 import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
+import androidx.compose.ui.graphics.lerp
 import com.gobe.tv.GobeApp
 import com.gobe.tv.R
+import com.gobe.tv.domain.Game
 import com.gobe.tv.domain.System
 import com.gobe.tv.ui.folders.vmFactory
 import com.gobe.tv.ui.library.LibrarySection
@@ -63,7 +65,7 @@ fun HomeScreen(
     val focused = state.focusedSystem
     val accent = if (focused != null) consoleArt(focused).accent else MaterialTheme.colorScheme.primary
     val bg by animateColorAsState(
-        lerpToward(GobeBg, accent, 0.22f), label = "stageBg",
+        lerp(GobeBg, accent, 0.22f), label = "stageBg",
     )
 
     Column(
@@ -127,7 +129,7 @@ private fun CarouselStage(
     consoles: List<ConsoleEntry>,
     focused: System,
     accent: Color,
-    continueForFocused: List<com.gobe.tv.domain.Game>,
+    continueForFocused: List<Game>,
     heroFocus: FocusRequester,
     onMove: (Int) -> Unit,
     onOpenConsole: () -> Unit,
@@ -137,16 +139,17 @@ private fun CarouselStage(
     val count = consoles.firstOrNull { it.system == focused }?.count ?: 0
     val hasContinue = continueForFocused.isNotEmpty()
     val focusManager = LocalFocusManager.current
+    val idx = consoles.indexOfFirst { it.system == focused }
 
     LaunchedEffect(Unit) { runCatching { heroFocus.requestFocus() } }
 
     Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
         Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
             Text("‹", style = MaterialTheme.typography.displayMedium,
-                color = Color.White.copy(alpha = 0.25f),
+                color = Color.White.copy(alpha = if (idx <= 0) 0.08f else 0.25f),
                 modifier = Modifier.align(Alignment.CenterStart))
             Text("›", style = MaterialTheme.typography.displayMedium,
-                color = Color.White.copy(alpha = 0.25f),
+                color = Color.White.copy(alpha = if (idx >= consoles.lastIndex) 0.08f else 0.25f),
                 modifier = Modifier.align(Alignment.CenterEnd))
 
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -229,14 +232,6 @@ private fun EmptyLibrary(onOpenSettings: () -> Unit, modifier: Modifier = Modifi
         Button(onClick = onOpenSettings) { Text(stringResource(R.string.home_add_roms)) }
     }
 }
-
-/** Linear blend of two colors in sRGB; small helper for the stage tint. */
-private fun lerpToward(from: Color, to: Color, t: Float): Color = Color(
-    red = from.red + (to.red - from.red) * t,
-    green = from.green + (to.green - from.green) * t,
-    blue = from.blue + (to.blue - from.blue) * t,
-    alpha = 1f,
-)
 
 @Composable
 private fun SearchField(
