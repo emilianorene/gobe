@@ -47,8 +47,10 @@ fun GameDetailPanel(
 
         Spacer(Modifier.width(48.dp))
 
-        // RIGHT: metadata + actions
-        Column(Modifier.weight(1f)) {
+        // RIGHT: metadata + actions. fillMaxHeight so the flexible-weight description can absorb
+        // remaining space and keep the action buttons + footer anchored at the bottom, always
+        // visible regardless of description length or pane height.
+        Column(Modifier.weight(1f).fillMaxHeight()) {
             Text(game.displayName, style = MaterialTheme.typography.displaySmall)
             Spacer(Modifier.height(8.dp))
             Text(
@@ -89,15 +91,21 @@ fun GameDetailPanel(
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurface,
             )
+            // Flexible middle region: absorbs remaining space so the actions below stay anchored to
+            // the bottom of the pane. Description clips/ellipsizes instead of pushing buttons off.
             if (!game.description.isNullOrBlank()) {
                 Spacer(Modifier.height(12.dp))
-                Text(
-                    game.description!!,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 8,
-                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                )
+                Box(Modifier.weight(1f).fillMaxWidth()) {
+                    Text(
+                        game.description!!,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 8,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    )
+                }
+            } else {
+                Spacer(Modifier.weight(1f))
             }
             Spacer(Modifier.height(32.dp))
             if (playable) {
@@ -110,7 +118,11 @@ fun GameDetailPanel(
                     Button(onClick = onResume) { Text("⟳ " + stringResource(R.string.detail_resume_save)) }
                 }
             } else {
-                Button(onClick = { }, enabled = false) { Text("▶ " + stringResource(R.string.detail_play_soon)) }
+                Button(
+                    onClick = { },
+                    enabled = false,
+                    modifier = playFocusRequester?.let { Modifier.focusRequester(it) } ?: Modifier,
+                ) { Text("▶ " + stringResource(R.string.detail_play_soon)) }
             }
             Spacer(Modifier.height(12.dp))
             Button(onClick = onToggleFavorite) {

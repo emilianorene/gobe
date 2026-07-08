@@ -13,6 +13,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.nativeKeyCode
@@ -169,7 +170,13 @@ fun LibraryScreen(app: GobeApp, section: LibrarySection, onBack: () -> Unit) {
                 // LEFT rail: poster rows. The railFocus requester is attached to whichever row is
                 // the focused one, so page-jump can move focus to the target.
                 LazyColumn(
-                    modifier = Modifier.weight(0.4f).fillMaxHeight(),
+                    // RIGHT out of the rail is redirected to the panel's Play button (which is now
+                    // always visible thanks to the anchored-actions layout). Down/Up within the panel
+                    // then navigate Resume/Favorite normally.
+                    modifier = Modifier
+                        .weight(0.4f)
+                        .fillMaxHeight()
+                        .focusProperties { right = playFocus },
                     state = listState,
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
