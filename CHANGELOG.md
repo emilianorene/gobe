@@ -11,6 +11,18 @@ Each released `app-release.apk` is attached to its tag on the
 
 _Nothing yet._
 
+## [0.5.0-beta] — 2026-07-07
+
+**Nintendo 64** — the fourth console comes online.
+
+### Added
+
+- **N64 emulation** — Nintendo 64 games are now playable, powered by the Mupen64Plus-Next core
+  (GLideN64, OpenGL ES 3.2). Drop `.z64`/`.n64`/`.v64` files in your ROMs folder and they show up in
+  the N64 library with cover art and metadata like every other console; the **Play** button is now
+  live. First-party titles run well on the reference hardware (ONN 4K); more demanding games may show
+  glitches or slowdowns — a limit of the hardware, not the app.
+
 ## [0.4.0-beta] — 2026-07-07
 
 **Navigation** — a faster, denser way to browse and read about your games.

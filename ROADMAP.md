@@ -3,7 +3,16 @@
 A living plan for where Gobe is headed. Dates are directional, not commitments — this is a personal
 project. Items graduate to the [CHANGELOG](CHANGELOG.md) as they ship.
 
-## ✅ v0.4.0-beta — _current_ — Navigation
+## ✅ v0.5.0-beta — _current_ — Nintendo 64
+
+The fourth console goes live.
+
+- **N64 emulation** — Nintendo 64 games are now playable via the Mupen64Plus-Next core (GLideN64,
+  OpenGL ES 3.2). ROMs (`.z64`/`.n64`/`.v64`) appear in their own console library with art and
+  metadata; the detail-panel **Play** button, previously "coming soon", now launches the game.
+  First-party titles run well on the reference ONN 4K; heavier games may glitch/slow (hardware limit).
+
+## ✅ v0.4.0-beta — Navigation
 
 A faster, denser way to browse a big library on a TV.
 

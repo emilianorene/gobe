@@ -2,7 +2,6 @@ package com.gobe.tv.emulation
 
 import com.gobe.tv.domain.System
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
 import org.junit.Test
 
 class CoreManagerTest {
@@ -17,7 +16,9 @@ class CoreManagerTest {
     @Test fun nesResolvesToBundledCore() =
         assertEquals("/data/app/x/lib/arm/libfceumm_libretro_android.so", cm.corePath(System.NES))
 
-    @Test fun unsupportedSystemsAreNullForNow() {
-        assertNull(cm.corePath(System.N64))
-    }
+    @Test fun n64ResolvesToBundledCore() =
+        assertEquals(
+            "/data/app/x/lib/arm/libmupen64plus_next_gles3_libretro_android.so",
+            cm.corePath(System.N64),
+        )
 }
