@@ -106,9 +106,9 @@
     <string name="lang_es">Español</string>
     <string name="lang_en">English</string>
 
-    <!-- v0.2: FDS disk swap -->
-    <string name="pause_change_disk">Change disk (%1$d/%2$d)</string>
-    <string name="emu_disk_changed">Disk %1$d</string>
+    <!-- FDS disk swap (fceumm drives FDS disk ops via RetroPad L/R, not the disk-control interface) -->
+    <string name="pause_change_disk">Change disk</string>
+    <string name="emu_disk_flipping">Flipping disk…</string>
     <!-- v0.2: controls hint template (combo is interpolated) -->
     <string name="controls_hint_menu_fmt">Menu: %1$s · or Back</string>
     <!-- v0.2: menu hotkey labels -->

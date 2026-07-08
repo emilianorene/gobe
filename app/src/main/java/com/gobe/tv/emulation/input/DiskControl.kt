@@ -1,9 +1,13 @@
 package com.gobe.tv.emulation.input
 
+import com.gobe.tv.domain.System
+
 /**
- * Next disk index for a multi-disk game, wrapping back to 0 after the last disk. Returns [current]
- * unchanged when there is nothing to cycle (count <= 1) or an invalid count. `mod` keeps the result
- * non-negative even if a core reports a negative current index. Pure.
+ * True when a game is a Famicom Disk System title. fceumm does NOT expose FDS disk sides through the
+ * libretro disk-control interface (so `getAvailableDisks()` is always 0); instead it maps FDS disk
+ * operations to RetroPad buttons — **L** = change disk side, **R** = insert/eject. The emulator
+ * therefore drives a "change disk" by sending those buttons to the core, but only for FDS games.
+ * Pure/testable.
  */
-fun nextDisk(current: Int, count: Int): Int =
-    if (count <= 1) current else (current + 1).mod(count)
+fun isFdsGame(system: System, romPath: String): Boolean =
+    system == System.NES && romPath.endsWith(".fds", ignoreCase = true)
