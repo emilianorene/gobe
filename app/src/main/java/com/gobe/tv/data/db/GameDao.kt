@@ -29,6 +29,12 @@ interface GameDao {
     @Query("SELECT * FROM games WHERE lastPlayed IS NOT NULL ORDER BY lastPlayed DESC LIMIT :limit")
     fun observeContinuePlaying(limit: Int): Flow<List<GameEntity>>
 
+    @Query("SELECT system AS system, COUNT(*) AS count FROM games GROUP BY system")
+    fun observeCountsBySystem(): Flow<List<SystemCount>>
+
+    @Query("SELECT * FROM games WHERE lastPlayed IS NOT NULL AND system = :system ORDER BY lastPlayed DESC LIMIT :limit")
+    fun observeContinuePlayingBySystem(system: String, limit: Int): Flow<List<GameEntity>>
+
     @Query("SELECT DISTINCT genre FROM games WHERE genre IS NOT NULL AND genre != '' ORDER BY genre COLLATE NOCASE ASC")
     fun distinctGenres(): Flow<List<String>>
 
@@ -47,3 +53,6 @@ interface GameDao {
     @Query("UPDATE games SET favorite = :favorite WHERE id = :id")
     suspend fun updateFavorite(id: Long, favorite: Boolean)
 }
+
+/** Room projection for a per-system game count. `system` maps back via the enum type converter. */
+data class SystemCount(val system: com.gobe.tv.domain.System, val count: Int)
