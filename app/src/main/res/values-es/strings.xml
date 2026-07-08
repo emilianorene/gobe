@@ -10,6 +10,9 @@
     <string name="legend_back">Volver</string>
     <string name="legend_search">Buscar</string>
     <string name="legend_settings">Ajustes</string>
+    <string name="legend_play">Jugar</string>
+    <string name="legend_page">Página</string>
+    <string name="legend_actions">Acciones</string>
     <string name="filter_all">Todos</string>
     <string name="game_recommended">Recomendado</string>
     <string name="filter_recommended">Recomendados</string>

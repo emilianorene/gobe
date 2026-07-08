@@ -54,7 +54,6 @@ fun GobeNavHost(app: GobeApp) {
         is Route.Library -> LibraryScreen(
             app = app,
             section = r.section,
-            onOpenGame = { push(Route.Detail(it)) },
             onBack = { pop() },
         )
         is Route.Settings -> SettingsScreen(
