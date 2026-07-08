@@ -27,9 +27,12 @@ with a cinematic, immersive presentation appropriate for a TV ("wow" effect),
 while demoting Continue-playing and removing Recommended/Favorites from the home
 surface (without losing that functionality elsewhere).
 
-Non-goals: changing the master-detail Library screen, the Detail screen,
-Settings, emulation, or the scan/metadata pipeline. This spec covers the home
-screen and the assets/data it needs.
+Non-goals: changing the Detail screen, Settings, emulation, or the
+scan/metadata pipeline. This spec covers the home screen redesign, the
+assets/data it needs, **and one scoped addition to the Library screen** — a
+Favorites / Recommended filter (see "What is removed / preserved") that replaces
+the deleted home tiles as the entry point to those collections. The Library's
+overall master-detail structure is otherwise unchanged.
 
 ## Chosen Direction — "Cinematic Carousel"
 
@@ -106,10 +109,23 @@ systems. Recorded here in case we want to revisit; not implemented.
 ## What is removed / preserved
 
 - **Removed from home:** the Recommended and Favorites `SectionTile`s.
-- **Preserved:** Recommended and Favorites remain fully accessible as **filters
-  inside each console's Library** — `searchGames` already supports
-  `recommendedOnly` and `favoritesOnly`, and the Library exposes filtering. No
-  data or capability is lost; only the top-level home tiles are removed.
+- **Preserved via a new Library filter:** the top-level Recommended/Favorites
+  tiles are today the **only** entry points to browsing those collections — the
+  Console Library currently hard-codes `recommendedOnly = false` /
+  `favoritesOnly = false` (`LibraryViewModel.sectionFilter` returns
+  `SectionFilter("", system, false, false)`; only genre + sort are reactive). So
+  deleting the tiles would remove that capability unless we add it back.
+  Therefore, **as a scoped Library addition**, add a **Favorites / Recommended
+  filter toggle** inside each console's Library: a control (e.g. two chips or a
+  cycling filter alongside the existing genre chips) that makes
+  `recommendedOnly` / `favoritesOnly` reactive for the current section. This
+  makes those collections **per-console** rather than global. `searchGames`
+  already accepts both flags, so this is a UI + view-model wiring change, not a
+  data-layer change. No capability is lost.
+  - Consequence: Recommended/Favorites become per-console views (e.g. "SNES
+    favorites") instead of one global list. Accepted for v1 as the clean,
+    console-first framing; a global cross-console view is an optional later
+    follow-up.
 - **Consoles with zero games are hidden** from the carousel to keep it clean.
 - **First-run / no games at all:** if no console has any games, show the
   existing onboarding path (prompt to add ROM folders — reuse the `Route.Folders`
@@ -149,8 +165,18 @@ systems. Recorded here in case we want to revisit; not implemented.
   extends the existing `observeContinuePlaying` pattern with a system filter.
 - **`focusedSystem`** in `HomeUiState`, defaulting to the first non-empty console.
 
-`SectionVisuals` (or a small new mapping) maps each `System` to its bundled photo
-drawable (and Arcade to the placeholder vector).
+`SectionVisuals` (or a small new mapping) maps each `System` to its console art.
+The mapping type must accommodate **two art kinds on the same display plate**: a
+bundled WebP **photo** (NES/SNES/N64) and a **vector** drawable (Arcade's
+placeholder `ic_controller_arcade.xml`). Both are just drawable resource ids, so
+the plate composable renders either; only the blend treatment differs (the
+`BlendMode.Multiply` white-knockout applies to the white-background photos; the
+transparent vector renders directly).
+
+For the Library filter (per "What is removed / preserved"), `LibraryViewModel`
+must make `recommendedOnly` / `favoritesOnly` **reactive** (driven by the new
+filter control) instead of fixed by `sectionFilter`, feeding the existing
+`searchGames` call.
 
 ## Components / boundaries
 
@@ -164,10 +190,14 @@ drawable (and Arcade to the placeholder vector).
   non-empty.
 - `HomeViewModel.kt` — extended state and the two new data flows above.
 - `GameDao` / `LibraryRepository` — the two new queries.
-- `SectionVisuals.kt` — photo mapping.
-- Unchanged: `GobeNavHost`, `Routes`, `LibraryScreen`, `DetailScreen`,
-  `Settings`, `HomeKeyMap` (semantics preserved), theme/color tokens (the
-  per-console accents already exist in `Color.kt`).
+- `SectionVisuals.kt` — console-art mapping (photo or vector, see above).
+- `LibraryScreen.kt` / `LibraryViewModel.kt` — **scoped change:** add the
+  Favorites / Recommended filter control and make `recommendedOnly` /
+  `favoritesOnly` reactive for the focused section (replaces the deleted home
+  tiles as the entry point). Everything else in the Library is unchanged.
+- Unchanged: `GobeNavHost`, `Routes`, `DetailScreen`, `Settings`, `HomeKeyMap`
+  (semantics preserved), theme/color tokens (the per-console accents already
+  exist in `Color.kt`).
 
 ## Error / edge handling
 
@@ -192,6 +222,9 @@ drawable (and Arcade to the placeholder vector).
   changes focused console and updates count + strip; A on hero routes to
   `Library(Console)`; A on a Continue tile routes to `Detail`; strip hidden when
   the focused console has no recent games; Recommended/Favorites tiles absent.
+- **Library filter:** toggling Favorites / Recommended in a Console Library makes
+  `recommendedOnly` / `favoritesOnly` reactive and filters the list correctly
+  (view-model test), and the control is reachable/visible (interaction test).
 - **Manual on-device (ONN / Android TV):** verify D-pad flow, focus visibility,
   background re-tint animation, and photo rendering at 1080p/4K, consistent with
   the project's existing on-device verification practice.
